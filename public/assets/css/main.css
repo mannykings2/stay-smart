@@ -24170,8 +24170,17 @@ Location:
 .hero-nav-tabs .nav-link{
     background: #f8e5d4 !important;
     color: rgb(135 82 51) !important;
+    overflow: hidden !important;
+    white-space: nowrap !important;
+    text-overflow: ellipsis !important;
 }
 
 .hero-nav-tabs-div .tab-content>.active {
     display: flex !important;
+}
+
+@media(max-width: 576px){
+    .hero-nav-tabs .nav-link{
+        max-width: 110px !important; 
+    }
 }

@@ -33,6 +33,7 @@
                                         width="54" height="54">
                                     <div class="ms-3">
                                         <h6 class="mb-0 dropdown-user-name">{{auth()->user()->first_name . ' ' .auth()->user()->last_name}}</h6>
+                                        <p class="mb-0">My Points: 459</p>
                                     </div>
                                 </div>
                             </a>
@@ -41,7 +42,32 @@
                             <hr class="dropdown-divider">
                         </li>
                         <li>
-                            <a class="dropdown-item" href="pages-user-profile.html">
+                            <a class="dropdown-item" href="{{route('apartments.index')}}">
+                                <div class="d-flex align-items-center">
+                                    <div class=""><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-suitcase" viewBox="0 0 16 16">
+                                        <path d="M6 5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7A.5.5 0 0 1 6 5m2 0a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7A.5.5 0 0 1 8 5m2 0a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7A.5.5 0 0 1 10 5"/>
+                                        <path d="M6.5 0a.5.5 0 0 0-.5.5V3H5a2 2 0 0 0-2 2v8a2 2 0 0 0 1.031 1.75A1.003 1.003 0 0 0 5 16a1 1 0 0 0 1-1h4a1 1 0 1 0 1.969-.25A2 2 0 0 0 13 13V5a2 2 0 0 0-2-2h-1V.5a.5.5 0 0 0-.5-.5zM9 3H7V1h2zm3 10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1z"/>
+                                      </svg> </div>
+                                    <div class="ms-3"><span>Book Now</span></div>
+                                </div>
+                            </a>
+                        </li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{{route('apartments.checkIn')}}">
+                                <div class="d-flex align-items-center">
+                                    <div class=""><i class="bi bi-printer"></i></div>
+                                    <div class="ms-3"><span>Check In</span></div>
+                                </div>
+                            </a>
+                        </li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="javascript:void(0);">
                                 <div class="d-flex align-items-center">
                                     <div class=""><i class="bi bi-person-fill"></i></div>
                                     <div class="ms-3"><span>Profile</span></div>

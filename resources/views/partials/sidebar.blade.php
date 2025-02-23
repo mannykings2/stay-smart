@@ -16,6 +16,13 @@
                 <div class="menu-title">Dashboard</div>
             </a>
         </li>
+        <li class="{{$activePage == 'Check In' ? 'mm-active' : ''}}">
+            <a href="{{route('apartments.checkIn')}}">
+                <div class="parent-icon"><i class="bi bi-printer"></i></i>
+                </div>
+                <div class="menu-title">Check In</div>
+            </a>
+        </li>
         <li class="{{$activePage == 'My Bookings' ? 'mm-active' : ''}}">
             <a href="{{route('booking.mine')}}">
                 <div class="parent-icon"><i class="bi bi-calendar2-check-fill"></i>

@@ -16,4 +16,10 @@ class PropertyController extends Controller
 
         return view('apartments.index', compact('trending_properties'));
     }
+
+    public function checkIn()
+    {
+
+        return view('apartments.check-in' );
+    }
 }

@@ -37,9 +37,10 @@ Route::middleware(['auth'])->group(function () {
     Route::controller(PagesController::class)->group(function () {
         Route::get('/services', 'services')->name('service.index');
     });
-    
+
     Route::controller(PropertyController::class)->group(function () {
         Route::get('/apartments', 'index')->name('apartments.index');
+        Route::get('/apartments/check-in', 'checkIn')->name('apartments.checkIn');
     });
 
     Route::controller(PaymentsController::class)->group(function () {

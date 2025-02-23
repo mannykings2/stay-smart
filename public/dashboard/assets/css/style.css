@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,100..900;1,100..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
 
 /*
 Template Name: Snacked Admin
@@ -27,12 +28,28 @@ File: style.css
 /* General */
 
 body {
+    /* font-family: 'Plus Jakarta Sans', sans-serif; */
+    /* background-color: #f7f8fa; */
     font-size: 14px;
-	color: #4c5258;
-	letter-spacing: .5px;
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    background-color: #f7f8fa;
+    color: #4c5258;
+    letter-spacing: .3px;
+    font-family: "Jost", serif;
     overflow-x: hidden;
+    position: relative;
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: url('/assets/img/bg/travel-pattern.jpg');
+    background-size: cover;
+    background-repeat: no-repeat;
+    opacity: 3%; /* Adjust opacity here */
+    z-index: -1;
 }
 
 table{
@@ -42,6 +59,9 @@ table{
 .wrapper{
     width: auto;
 	position: relative
+}
+
+.page-content{
 }
 
 a {
@@ -1667,12 +1687,14 @@ a {
 
 .property-carousel .card-body {
     text-align: center;
-    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-family: "Jost", serif;
+    /* font-family: 'Plus Jakarta Sans', sans-serif; */
     min-height: 110px;
 }
 
 .card-body {
-    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-family: "Jost", serif;
+    /* font-family: 'Plus Jakarta Sans', sans-serif; */
 }
 
 .property-carousel .card-title{
@@ -1783,7 +1805,8 @@ a {
 .amenities .item{
     padding: 7px  20px;
     border: 1px solid #00000081;
-    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-family: "Jost", serif;
+    /* font-family: 'Plus Jakarta Sans', sans-serif; */
     display: block;
     border-radius: 20px;
     transition: all 0.3s ease-in-out;
@@ -1803,6 +1826,19 @@ a {
     .property-banner-content {
         font-size: 1rem;
     }
+
+    .page-content {
+        margin-left: 260px;
+        margin-top: 70px;
+        padding: 0.5rem;
+        transition: all .2s;
+    }
+
+    .property-carousel .card img {
+        height: 280px;
+    }
+
+    
 }
 
 /* Responsive */
@@ -1997,7 +2033,26 @@ a {
 
 }
 
+.points-notice{
+    background: #87523342;
+    border: 1px solid #875233;
+}
 
+.input-area input{
+    width: 100%;
+    background: #F3F3F3;
+    padding: 24px 20px;
+    height: 64px;
+    border-radius: 8px;
+    color: var(--ztc-text-text-25);
+    font-family: var(--ztc-family-font2);
+    font-size: var(--ztc-font-size-font-s16);
+    font-style: normal;
+    font-weight: var(--ztc-weight-medium);
+    line-height: 16px;
+    border: none;
+    outline: none;
+}
 
   @media screen and (max-width:767px) {
 
@@ -2028,3 +2083,5 @@ a {
 		display: none
 	}
 }
+
+

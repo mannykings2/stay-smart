@@ -2,45 +2,39 @@
 
 @section('content')
 <!--start content-->
-<main class="page-content">
-    <div class="container p-5">
-        <div class="row mb-3 py-3">
-            <h6 class="mb-2 text-uppercase">Trending</h6>
-            {{-- <hr/> --}}
-            <div class="property-carousel owl-carousel owl-theme p-0">
-                @foreach ($trending_properties as $property)
-                    <div class="item">
-                        <div class="card">
-                            <div class="property-badge">
-                                <span class="booked {{$property->status == 'Booked' ? 'bg-danger' : ($property->status == 'Available' ? 'bg-success' : '')}}">{{$property->status}}</span>
-                                <span class="price bg-success">₦ {{$property->price_per_night}}</span>
-                            </div>
-                            <img src="{{ asset('storage/' . $property->image_path) }}" alt="{{ $property->name }}" class="card-img-top">
-                            <div class="card-body">
-                                <h5 class="card-title">{{ $property->name }}</h5>
-                                <p class="card-text">{{ $property->location }}</p>
-                                <p class="card-text buttons gap-2">
-                                    <a href="/book/property/{{$property->id}}" class="icons plus">
-                                        <i class="bi bi-plus-lg"></i>
-                                    </a>
-                                    <a href="#" class="icons bookmark">
-                                        <i class="bi bi-bookmark"></i>
-                                    </a>
-                                    <a href="#" class="icons eye">
-                                        <i class="bi bi-eye"></i>
-                                    </a>
-                                </p>
-                                </p>
-                            </div>
+    <main class="page-content">
+        <h6 class="mb-2 text-uppercase">Trending</h6>
+        <hr/>
+        <div class="property-carousel p-0 row">
+            @foreach ($trending_properties as $property)
+                <div class="p-0 col-md-3">
+                    <div class="card">
+                        <div class="property-badge">
+                            <span class="booked {{$property->status == 'Booked' ? 'bg-danger' : ($property->status == 'Available' ? 'bg-success' : '')}}">{{$property->status}}</span>
+                            <span class="price bg-success">₦ {{$property->price_per_night}}</span>
+                        </div>
+                        <img src="{{ asset('storage/' . $property->image_path) }}" alt="{{ $property->name }}" class="card-img-top">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ $property->name }}</h5>
+                            <p class="card-text">{{ $property->location }}</p>
+                            <p class="card-text buttons gap-2">
+                                <a href="/book/property/{{$property->id}}" class="icons plus">
+                                    <i class="bi bi-plus-lg"></i>
+                                </a>
+                                <a href="#" class="icons bookmark">
+                                    <i class="bi bi-bookmark"></i>
+                                </a>
+                                <a href="#" class="icons eye">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                            </p>
+                            </p>
                         </div>
                     </div>
-                @endforeach
-            </div>
-
+                </div>
+            @endforeach
         </div>
-        <!--end row-->
-    </div>
-</main>
+    </main>
 @endsection
 
 @push('js')

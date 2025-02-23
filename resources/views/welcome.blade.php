@@ -52,12 +52,12 @@
               </div>
               <div class="main-menu">
                 <ul>
-                    <li class="nav-item"><a href="#amenities" class="nav-link active"><span>Amenities</span></a></li>
+                    {{-- <li class="nav-item"><a href="#amenities" class="nav-link active"><span>Amenities</span></a></li> --}}
                     <li class="nav-item"><a href="#apartment" class="nav-link"><span>Apartment</span></a></li>
                     <li class="nav-item"><a href="#gallery" class="nav-link"><span>Gallery</span></a></li>
                     <li class="nav-item"><a href="#property" class="nav-link"><span>Property</span></a></li>
                     <li class="nav-item"><a href="#testimonials" class="nav-link"><span>Testimonials</span></a></li>
-                    <li class="nav-item"><a href="{{route('home')}}" class="nav-link"><span>My Space</span></a></li>
+                    <li class="nav-item"><a href="{{route('home')}}" class="nav-link"><span>My Account</span></a></li>
                 </ul>
               </div>
               <div class="btn-area4">
@@ -118,12 +118,12 @@
      </div>
     <div class="mobile-nav mobile-nav1">
       <ul class="mobile-nav-list nav-list1">
-        <li class="nav-item"><a href="#amenities" class="nav-link active"><span>Amenities</span></a></li>
+        {{-- <li class="nav-item"><a href="#amenities" class="nav-link active"><span>Amenities</span></a></li> --}}
         <li class="nav-item"><a href="#apartment" class="nav-link"><span>Apartment</span></a></li>
         <li class="nav-item"><a href="#gallery" class="nav-link"><span>Gallery</span></a></li>
         <li class="nav-item"><a href="#property" class="nav-link"><span>Property</span></a></li>
-        <li class="nav-item"><a href="#testimonials" class="nav-link"><span>Testimonials</span></a></li>
-        <li class="nav-item"><a href="#blogs" class="nav-link"><span>Blogs</span></a></li>
+        <li class="nav-item"><a href="#testimonials" class="nav-link"><span>Testimonials</span></a></li> 
+        <li class="nav-item"><a href="{{route('home')}}" class="nav-link"><span>My Account</span></a></li> 
       </ul>
 
       <div class="allmobilesection">
@@ -730,7 +730,7 @@
 <!--===== GALLERY AREA ENDS =======-->
 
 <!--===== PROPERTIES AREA STARTS =======-->
-<div class="property10-section-area sp6" id="property">
+{{-- <div class="property10-section-area sp6" id="property">
     <div class="container">
       <div class="row">
         <div class="col-lg-12">
@@ -773,7 +773,7 @@
         </div>
       </div>
     </div>
-</div>
+</div> --}}
   <!--===== PROPERTIES AREA ENDS =======-->
 
 <!--===== TESTIMONIAL AREA STARTS =======-->
