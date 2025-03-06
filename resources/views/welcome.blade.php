@@ -122,8 +122,8 @@
         <li class="nav-item"><a href="#apartment" class="nav-link"><span>Apartment</span></a></li>
         <li class="nav-item"><a href="#gallery" class="nav-link"><span>Gallery</span></a></li>
         <li class="nav-item"><a href="#property" class="nav-link"><span>Property</span></a></li>
-        <li class="nav-item"><a href="#testimonials" class="nav-link"><span>Testimonials</span></a></li> 
-        <li class="nav-item"><a href="{{route('home')}}" class="nav-link"><span>My Account</span></a></li> 
+        <li class="nav-item"><a href="#testimonials" class="nav-link"><span>Testimonials</span></a></li>
+        <li class="nav-item"><a href="{{route('home')}}" class="nav-link"><span>My Account</span></a></li>
       </ul>
 
       <div class="allmobilesection">

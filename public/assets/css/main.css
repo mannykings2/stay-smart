@@ -1111,10 +1111,18 @@ Location:
   line-height: 54px;
 }
 @media (max-width: 767px) {
-  .heading1 h2 {
-    font-size: var(--ztc-font-size-font-s32);
-    line-height: 40px;
-  }
+    .heading1 h2 {
+        font-size: var(--ztc-font-size-font-s32);
+        line-height: 40px;
+    }
+
+    .header-btn11.search{
+        padding: 20px 40px !important;
+    }
+
+    .space70{
+        height: 0;
+    }
 }
 .heading1 p {
   color: var(--ztc-text-text-3);
@@ -24181,6 +24189,11 @@ Location:
 
 @media(max-width: 576px){
     .hero-nav-tabs .nav-link{
-        max-width: 110px !important; 
+        max-width: 25vw !important;
+        font-size: 13px;
+    }
+
+    .hero-nav-tabs .nav-link.active{
+        max-width: unset !important;
     }
 }

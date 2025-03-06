@@ -37,7 +37,7 @@
                 <div class="menu-title">Apartments</div>
             </a>
         </li>
-        <li class="{{$activePage == '' ? 'mm-active' : ''}}">
+        <li class="{{$activePage == 'Payments' ? 'mm-active' : ''}}">
             <a href="{{route('payment.index')}}">
                 <div class="parent-icon"><i class="bi bi-wallet2"></i>
                 </div>
@@ -61,9 +61,9 @@
                 <div class="menu-title">Apartments</div>
             </a>
             <ul>
-                <li> <a href="/get-tasks?filter=successful"><i class="bi bi-circle"></i>Amenities</a>
+                <li> <a href="#"><i class="bi bi-circle"></i>Amenities</a>
                 </li>
-                <li> <a href="/get-tasks?filter=failed"><i class="bi bi-circle"></i>Add Apartment</a>
+                <li> <a href="#"><i class="bi bi-circle"></i>Add Apartment</a>
                 </li>
             </ul>
         </li>
@@ -102,11 +102,11 @@
                 <div class="menu-title">Roles & Permissions</div>
             </a>
             <ul>
-                <li> <a href="/get-kcts?filter=treated"><i class="bi bi-circle"></i>Roles</a>
+                <li> <a href="#"><i class="bi bi-circle"></i>Roles</a>
                 </li>
             </ul>
             <ul>
-                <li> <a href="/get-kcts?filter=treated"><i class="bi bi-circle"></i>Permissions</a>
+                <li> <a href="#"><i class="bi bi-circle"></i>Permissions</a>
                 </li>
             </ul>
         </li>
@@ -125,12 +125,23 @@
             </a>
         </li>
         @endif
-        <li>
-            <a href="#">
+        <li class="{{$activePage == 'Profile' ? 'mm-active' : ''}}">
+            <a href="{{route('profile.index')}}">
                 <div class="parent-icon"><i class="bi bi-person-lines-fill"></i>
                 </div>
                 <div class="menu-title">Profile</div>
             </a>
+        </li>
+        <li>
+            <a href="javascript:void(0)" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                <div class="parent-icon">
+                    <i class="bi bi-lock"></i>
+                </div>
+                <div class="menu-title">Logout</div>
+            </a>
+            <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
+                @csrf
+            </form>
         </li>
     </ul>
     <!--end navigation-->

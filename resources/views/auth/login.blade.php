@@ -5,7 +5,7 @@
         <div class="container-fluid">
             <div class="row">
                 <div class="col-12 col-lg-4 mx-auto">
-                    <div class="card shadow rounded-5 overflow-hidden">
+                    <div class="card shadow rounded-4 overflow-hidden">
                         <div class="card-body p-4 p-sm-5">
                             <h5 class="card-title">Sign In</h5>
                             @if (Session::has('message'))

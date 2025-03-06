@@ -3,6 +3,7 @@
 use App\Http\Controllers\BookingsController;
 use App\Http\Controllers\PagesController;
 use App\Http\Controllers\PaymentsController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PropertyController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -45,5 +46,11 @@ Route::middleware(['auth'])->group(function () {
 
     Route::controller(PaymentsController::class)->group(function () {
         Route::get('/payments', 'index')->name('payment.index');
+    });
+
+    Route::controller(ProfileController::class)->group(function () {
+        Route::get('/profile', 'index')->name('profile.index');
+        Route::post('/update-profile', 'updateProfile')->name('update.profile');
+        Route::post('/update-password', 'updatePassword')->name('update.password');
     });
 });
