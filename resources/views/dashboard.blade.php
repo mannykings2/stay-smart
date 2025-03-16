@@ -19,6 +19,7 @@
             <h2>Welcome Back!</h2>
             <p>{{$greeting}}, {{auth()->user()->first_name}}🙂...</p>
         </div>
+        @if(auth()->user()->role == 'User')
         <div class="row justify-content-center mb-3">
             <div class="col-md-7">
                 <div class="points-notice p-4 rounded-4 shadow-sm d-flex gap-3 align-items-center">
@@ -27,6 +28,7 @@
                 </div>
             </div>
         </div>
+        @endif
         @if(auth()->user()->role != 'User')
         <div class="row row-cols-1 row-cols-lg-2 row-cols-xl-4">
             <div class="col">

@@ -54,7 +54,7 @@
         </li>
         @if(auth()->user()->role != 'User')
         <li class="{{$activePage == '' ? 'mm-active' : ''}}" class="menu-label">Property Management</li>
-        <li class="{{$activePage == '' ? 'mm-active' : ''}}">
+        <li class="{{$activePage == 'Add Apartment' ? 'mm-active' : ''}}">
             <a class="has-arrow" href="javascript:;">
                 <div class="parent-icon"><i class="bi bi-house-heart-fill"></i>
                 </div>
@@ -63,7 +63,11 @@
             <ul>
                 <li> <a href="#"><i class="bi bi-circle"></i>Amenities</a>
                 </li>
-                <li> <a href="#"><i class="bi bi-circle"></i>Add Apartment</a>
+                <li>
+                    <a href="{{route('apartments.create')}}"><i class="bi bi-circle"></i>Add Apartment</a>
+                </li>
+                <li>
+                    <a href="{{route('apartments.all')}}"><i class="bi bi-circle"></i>All Apartments</a>
                 </li>
             </ul>
         </li>

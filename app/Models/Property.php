@@ -17,7 +17,9 @@ class Property extends Model
         'description',
         'price_per_night',
         'user_id',
-        'status'
+        'status',
+        'max_guests',
+        'image_path'
     ];
 
     public function user()
@@ -38,5 +40,10 @@ class Property extends Model
     public function reviews()
     {
         return $this->hasMany(Review::class);
+    }
+
+    public function getFullLocationAttribute()
+    {
+        return "{$this->address}, {$this->city}, {$this->country}";
     }
 }
