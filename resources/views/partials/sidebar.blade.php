@@ -52,7 +52,7 @@
             </a>
         </li>
         </li>
-        @if(auth()->user()->role != 'User')
+        @can("access all records")
         <li class="{{$activePage == '' ? 'mm-active' : ''}}" class="menu-label">Property Management</li>
         <li class="{{$activePage == 'Add Apartment' ? 'mm-active' : ''}}">
             <a class="has-arrow" href="javascript:;">
@@ -97,7 +97,7 @@
         </li>
         @endif
         <li class="menu-label">Settings</li>
-        @if(auth()->user()->role != 'User')
+        @can("access all records")
         <li>
             <a class="has-arrow" href="javascript:;">
 
@@ -106,11 +106,23 @@
                 <div class="menu-title">Roles & Permissions</div>
             </a>
             <ul>
-                <li> <a href="#"><i class="bi bi-circle"></i>Roles</a>
+                <li>
+                    <a href="{{route('roles.index')}}"><i class="bi bi-circle"></i>Roles</a>
                 </li>
             </ul>
             <ul>
-                <li> <a href="#"><i class="bi bi-circle"></i>Permissions</a>
+                <li>
+                    <a href="{{route('permissions.index')}}"><i class="bi bi-circle"></i>Permissions</a>
+                </li>
+            </ul>
+            <ul>
+                <li>
+                    <a href="{{route('role-assignment.index')}}"><i class="bi bi-circle"></i>Assign Roles</a>
+                </li>
+            </ul>
+            <ul>
+                <li>
+                    <a href="{{route('permission-assignment.index')}}"><i class="bi bi-circle"></i>Assign Permissions</a>
                 </li>
             </ul>
         </li>

@@ -19,7 +19,7 @@
             <h2>Welcome Back!</h2>
             <p>{{$greeting}}, {{auth()->user()->first_name}}🙂...</p>
         </div>
-        @if(auth()->user()->role == 'User')
+        @if(auth()->user()->hasRole('User'))
         <div class="row justify-content-center mb-3">
             <div class="col-md-7">
                 <div class="points-notice p-4 rounded-4 shadow-sm d-flex gap-3 align-items-center">
@@ -29,7 +29,7 @@
             </div>
         </div>
         @endif
-        @if(auth()->user()->role != 'User')
+        @can("access all records")
         <div class="row row-cols-1 row-cols-lg-2 row-cols-xl-4">
             <div class="col">
                 <div class="card rounded-4">
@@ -185,7 +185,7 @@
                 @endif
             </div>
         </div>
-        @if(auth()->user()->role != 'User')
+        @can("access all records")
         <div class="row px-3 mt-3">
             <h6 class="mb-2 text-uppercase">Manage all Bookings</h6>
             <hr/>
@@ -242,7 +242,7 @@
                 </div>
             </div>
         </div>
-        @endif
+        @endcan
     </main>
     <!--end page main-->
 @endsection

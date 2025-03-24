@@ -3,8 +3,12 @@
 use App\Http\Controllers\BookingsController;
 use App\Http\Controllers\PagesController;
 use App\Http\Controllers\PaymentsController;
+use App\Http\Controllers\PermissionAssignmentController;
+use App\Http\Controllers\PermissionsController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PropertyController;
+use App\Http\Controllers\RoleAssignmentController;
+use App\Http\Controllers\RolesController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -57,4 +61,13 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/update-profile', 'updateProfile')->name('update.profile');
         Route::post('/update-password', 'updatePassword')->name('update.password');
     });
+
+    Route::resources([
+        'roles' => RolesController::class,
+        'permissions' => PermissionsController::class,
+        'role-assignment' => RoleAssignmentController::class,
+        'permission-assignment' => PermissionAssignmentController::class
+    ]);
+
+    Route::post('/role-permissions/{role}', [RolesController::class, 'getPermissions']);
 });

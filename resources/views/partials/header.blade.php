@@ -67,7 +67,7 @@
                             <hr class="dropdown-divider">
                         </li>
                         <li>
-                            <a class="dropdown-item" href="javascript:void(0);">
+                            <a class="dropdown-item" href="/profile">
                                 <div class="d-flex align-items-center">
                                     <div class=""><i class="bi bi-person-fill"></i></div>
                                     <div class="ms-3"><span>Profile</span></div>
