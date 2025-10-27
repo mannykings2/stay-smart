@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Booking;
+use App\Models\ChefBooking;
 use App\Models\Property;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -15,7 +16,8 @@ class BookingsController extends Controller
 
     public function mine(){
         $bookings = Booking::where('user_id', auth()->id())->latest()->get();
-        return view('bookings.mine', compact('bookings'));
+        $chefBookings = ChefBooking::where('user_id', auth()->id())->latest()->get();
+        return view('bookings.mine', compact('bookings', 'chefBookings'));
     }
 
     public function store(Request $request)

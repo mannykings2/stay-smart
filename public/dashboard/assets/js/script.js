@@ -135,3 +135,15 @@ function deleteRole(id){
 function addRole(){
     $('#add-role').modal('show');
 }
+
+function showSuccessMessage(message) {
+    const alertBox = document.createElement("div");
+    alertBox.className = "alert alert-success message-alert";
+    alertBox.innerHTML = `<i class="fa fa-check-circle"></i> <span class="pl-20 pr-20">${message}</span>`;
+
+    document.body.prepend(alertBox);
+
+    setTimeout(() => {
+        alertBox.remove();
+    }, 1400);
+}

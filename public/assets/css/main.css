@@ -22524,11 +22524,11 @@ Location:
   margin: 0 8px 0 0;
 }
 .pagination-area ul li a.active {
-  background: var(--ztc-bg-bg-8);
+  background: var(--ztc-bg-bg-22);
   color: var(--ztc-text-text-1);
 }
 .pagination-area ul li a:hover {
-  background: var(--ztc-bg-bg-8);
+  background: var(--ztc-bg-bg-22);
   color: var(--ztc-text-text-1);
   transition: all 0.4s;
 }

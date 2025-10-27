@@ -17,10 +17,12 @@ return new class extends Migration
             $table->id();
             $table->string('first_name');
             $table->string('last_name');
+            $table->string('specialty')->nullable();
             $table->string('phone_number')->unique();
             $table->string('vehicle_details');
             $table->string('license_number')->unique();
             $table->enum('availability_status', ['Available', 'Busy'])->default('Available');
+            $table->string('image')->nullable();
             $table->timestamps();
         });
     }

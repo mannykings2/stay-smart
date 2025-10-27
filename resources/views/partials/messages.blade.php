@@ -17,3 +17,12 @@
         @endif
     </div>
 @endif
+
+@if ($errors->any())
+    <div class="alert alert-danger message-alert" role="alert">
+        <i class="fa fa-times-circle"></i>
+        @foreach ($errors->all() as $error)
+            <span class="pr-20 pl-20">{{ $error }}</span>
+        @endforeach
+    </div>
+@endif

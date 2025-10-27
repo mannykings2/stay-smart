@@ -212,42 +212,45 @@
                     </li>
                 </ul>
                 <div class="header-contact-box tab-content" id="heroTabsContent" style="border-top-left-radius: 0;">
+                  <form method="GET" action="{{ route('search') }}">  
                     <div class="row tab-pane fade show active" id="book" role="tabpanel" aria-labelledby="book-tab">
-                        <div class="col-md-10">
-                            <div class="row">
-                                <div class="col-md-3">
-                                    <div class="input-area">
-                                        <label class="d-lg-none" for="location">Location</label>
-                                        <input type="text" name="location" placeholder="Location">
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="input-area">
-                                        <label class="d-lg-none mt-3" for="check-in">Check-in</label>
-                                        <input type="date" name="check-in" placeholder="Check-in">
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="input-area">
-                                        <label class="d-lg-none mt-3" for="check-out">Check-out</label>
-                                        <input type="date" name="check-out" placeholder="Check-out">
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="input-area">
-                                        <label class="d-lg-none mt-3" for="check-out">Guests</label>
-                                        <input type="number" name="guests" placeholder="Guests">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-2 align-items-center d-flex justify-content-end">
-                            <div class="input-area text-end">
-                                <div class="space30 d-lg-none"></div>
-                                <button type="submit" class="header-btn11 search">Search <i class="fa-solid fa-arrow-right"></i></button>
-                            </div>
-                        </div>
-                    </div>
+                          <div class="col-md-10">
+                              <div class="row">
+                                  <div class="col-md-3">
+                                      <div class="input-area">
+                                          <label class="d-lg-none" for="location">Location</label>
+                                          <input type="text" name="location" placeholder="Location">
+                                      </div>
+                                  </div>
+                                  <div class="col-md-3">
+                                      <div class="input-area">
+                                          <label class="d-lg-none mt-3" for="check_in">Check-in</label>
+                                          <input type="date" name="check_in" placeholder="Check-in">
+                                      </div>
+                                  </div>
+                                  <div class="col-md-3">
+                                      <div class="input-area">
+                                          <label class="d-lg-none mt-3" for="check_out">Check-out</label>
+                                          <input type="date" name="check_out" placeholder="Check-out">
+                                      </div>
+                                  </div>
+                                  <div class="col-md-3">
+                                      <div class="input-area">
+                                          <label class="d-lg-none mt-3" for="check-out">Guests</label>
+                                          <input type="number" name="guests" placeholder="Guests">
+                                      </div>
+                                  </div>
+                              </div>
+                          </div>
+                          <div class="col-md-2 align-items-center d-flex justify-content-end">
+                              <div class="input-area text-end">
+                                  <div class="space30 d-lg-none"></div>
+                                  <button type="submit" class="header-btn11 search">Search <i class="fa-solid fa-arrow-right"></i></button>
+                              </div>
+                          </div>
+                      </div>
+                  </form>
+                  <form method="GET" action="{{ route('check_in') }}">  
                     <div class="row tab-pane fade" id="checkIn" role="tabpanel" aria-labelledby="checkIn-tab">
                         <div class="col-md-12">
                             <h3>Online check-in</h3>
@@ -264,7 +267,7 @@
                                 <div class="col-md-6">
                                     <div class="input-area">
                                         <label class="d-lg-none mt-3" for="booking_reference">Booking Reference</label>
-                                        <input type="number" name="booking_reference" placeholder="Booking Reference">
+                                        <input type="text" name="booking_reference" placeholder="Booking Reference">
                                     </div>
                                 </div>
                             </div>
@@ -276,6 +279,7 @@
                             </div>
                         </div>
                     </div>
+                  </form>
                     <div class="row tab-pane fade" id="bookings" role="tabpanel" aria-labelledby="bookings-tab">
                         <div class="col-md-12">
                             <h3>Access your booking information</h3>
