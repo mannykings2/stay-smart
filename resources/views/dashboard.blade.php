@@ -121,7 +121,7 @@
                             <img src="{{asset('dashboard/assets/images/chef.jpg')}}" alt="" style="text-align:center; width: 80%">
                         </div>
                         <p>Professional Chefs are waiting</p>
-                        <button type="button" class="btn btn-primary rounded-3 px-4">Book a Chef</button>
+                        <a href="{{route('chefs.book')}}" class="btn btn-primary rounded-3 px-4" role="button">Book a Chef</a>
                     </div>
                 </div>
             </div>
@@ -132,7 +132,7 @@
                             <img src="{{asset('dashboard/assets/images/driver.avif')}}" alt="" style="text-align:center; width: 94%">
                         </div>
                         <p class="mt-1">Our Drivers Available all day.</p>
-                        <button type="button" class="btn btn-primary rounded-3 px-4">Book a Driver</button>
+                        <a href="{{route('drivers.book')}}" class="btn btn-primary rounded-3 px-4" type="button">Book a Driver</a>
                     </div>
                 </div>
             </div>
