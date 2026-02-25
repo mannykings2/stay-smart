@@ -31,4 +31,22 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'paystack' => [
+        /*
+         | Paystack integration settings. Set these in your .env file:
+         | PAYSTACK_SECRET=your_secret_key
+         | PAYSTACK_PUBLIC=your_public_key
+         | PAYSTACK_BASE_URL (optional, defaults to https://api.paystack.co)
+         */
+        'secret' => env('PAYSTACK_SECRET'),
+        'public' => env('PAYSTACK_PUBLIC'),
+        'base_url' => env('PAYSTACK_BASE_URL', 'https://api.paystack.co'),
+    ],
+
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => env('GOOGLE_REDIRECT_URL'),
+    ],
+
 ];

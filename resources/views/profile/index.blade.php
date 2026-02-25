@@ -23,14 +23,31 @@
                                     <input type="text" name="last_name" value="{{auth()->user()->last_name}}" placeholder="Last Name">
                                 </div>
                             </div>
-                            <div class="col-md-12">
+                            <div class="col-md-6 mb-3">
+                                <div class="input-area">
+                                    <label class="d-lg-none mt-3" for="gender">Gender</label>
+                                    <select name="gender" class="form-control">
+                                        <option value="">Select Gender</option>
+                                        <option value="Male" {{auth()->user()->gender == 'Male' ? 'selected' : ''}}>Male</option>
+                                        <option value="Female" {{auth()->user()->gender == 'Female' ? 'selected' : ''}}>Female</option>
+                                        <option value="Other" {{auth()->user()->gender == 'Other' ? 'selected' : ''}}>Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="input-area">
+                                    <label class="d-lg-none mt-3" for="phone_number">Phone Number</label>
+                                    <input type="text" name="phone_number" value="{{auth()->user()->phone_number}}" placeholder="Phone Number">
+                                </div>
+                            </div>
+                            <div class="col-md-12 mb-3">
                                 <div class="input-area">
                                     <label class="d-lg-none mt-3" for="Email">Email</label>
                                     <input type="email" name="Email" placeholder="Email" value="{{auth()->user()->email}}" readonly>
                                 </div>
                             </div>
                         </div>
-                        <button type="submit" href="{{route('apartments.index')}}" role="button" class="btn btn-primary rounded-3 px-3">Update</button>
+                        <button type="submit" href="{{route('properties.index')}}" role="button" class="btn btn-primary rounded-3 px-3">Update</button>
                     </form>
                 </div>
                 <div class="card rounded-4 p-4 d-flex justify-content-between mt-5">
@@ -58,7 +75,7 @@
                             </div>
 
                         </div>
-                        <button type="submit" href="{{route('apartments.index')}}" role="button" class="btn btn-primary rounded-3 px-3">Update</button>
+                        <button type="submit" href="{{route('properties.index')}}" role="button" class="btn btn-primary rounded-3 px-3">Update</button>
                     </form>
                 </div>
             </div>

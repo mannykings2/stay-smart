@@ -598,6 +598,12 @@ img {
   --ztc-family-font2: 'Plus Jakarta Sans', sans-serif;
 }
 
+@media (max-width: 991px) {
+  .homepage10-body {
+    padding-top: 80px !important;
+  }
+}
+
 /*
 ============================
 Name:  Hosue -Single Property HTML Template

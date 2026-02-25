@@ -17,3 +17,10 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+
+// Paystack endpoints (public)
+use App\Http\Controllers\PagesController;
+
+// Initialize endpoint removed (use PagesController::payNow for web flow).
+Route::get('/paystack/callback', [PagesController::class, 'verifyPayment'])->name('paystack.callback');
+Route::post('/paystack/callback', [PagesController::class, 'verifyPayment']);

@@ -12,11 +12,19 @@ class Booking extends Model
     protected $fillable = [
         'user_id',
         'property_id',
+        'reference',
         'status',
         'check_in_date',
         'check_out_date',
+        'check_in_time',
+        'check_out_time',
         'total_price'
     ];
+
+    public function digitalCheckIns()
+    {
+        return $this->hasMany(DigitalCheckIn::class);
+    }
 
     public function user()
     {
@@ -31,5 +39,12 @@ class Booking extends Model
     public function payment()
     {
         return $this->hasOne(Payment::class);
+    }
+
+    public function isCheckedIn()
+    {
+        return $this->digitalCheckIns()
+            ->where('status', 'Checked In')
+            ->exists();
     }
 }

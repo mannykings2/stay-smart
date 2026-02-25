@@ -29,7 +29,7 @@ class DriverServiceController extends Controller
 
         DriverService::create($validated);
 
-        return response()->json(['success' => true, 'message' => 'Driver service created successfully!']);
+         return redirect()->back()->with('success', 'Service created successfully!');
     }
 
     public function assignService(Request $request)

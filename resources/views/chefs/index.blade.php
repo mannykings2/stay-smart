@@ -14,13 +14,13 @@
                                     <thead>
                                         <tr>
                                             <th>#</th>
-                                            <th>Image</th>
+                                            <th class="d-none d-md-table-cell">Image</th>
                                             <th>Full Name</th>
                                             <th>Specialty</th>
-                                            <th>Phone Number</th>
-                                            <th>Service</th>
-                                            <th>Price (₦)</th>
-                                            <th>Status</th>
+                                            <th class="d-none d-md-table-cell">Phone Number</th>
+                                            <th class="d-none d-md-table-cell">Service</th>
+                                            <th class="d-none d-md-table-cell">Price (₦)</th>
+                                            <th class="d-none d-md-table-cell">Status</th>
                                             <th>Actions</th>
                                         </tr>
                                     </thead>
@@ -28,7 +28,7 @@
                                         @foreach ($chefs as $index => $chef)
                                         <tr>
                                             <td>{{ $index + 1 }}</td>
-                                            <td>
+                                            <td class="d-none d-md-table-cell">
                                                 @if($chef->image)
                                                     <img src="{{ asset($chef->image) }}" width="40" height="40" class="rounded-circle shadow-sm" />
                                                 @else
@@ -37,10 +37,10 @@
                                             </td>
                                             <td>{{ $chef->first_name }} {{ $chef->last_name }}</td>
                                             <td>{{ $chef->specialty ?? 'N/A' }}</td>
-                                            <td>{{ $chef->phone_number }}</td>
-                                            <td>{{ optional($chef->chefServices->first())->name ?? 'N/A' }}</td>
-                                            <td>{{ count($chef->chefServices) > 0 ? number_format(optional($chef->chefServices->first())->pivot->price) : '-' }}</td>
-                                            <td>
+                                            <td class="d-none d-md-table-cell">{{ $chef->phone_number }}</td>
+                                            <td class="d-none d-md-table-cell">{{ optional($chef->chefServices->first())->name ?? 'N/A' }}</td>
+                                            <td class="d-none d-md-table-cell">{{ count($chef->chefServices) > 0 ? number_format(optional($chef->chefServices->first())->pivot->price) : '-' }}</td>
+                                            <td class="d-none d-md-table-cell">
                                                 <span class="badge bg-{{ $chef->availability_status == 'Available' ? 'success' : 'warning' }}">
                                                     {{ $chef->availability_status }}
                                                 </span>

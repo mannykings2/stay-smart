@@ -28,7 +28,7 @@ class RegisterController extends Controller
      *
      * @var string
      */
-    protected $redirectTo = '/home';
+    protected $redirectTo = '/';
 
     /**
      * Create a new controller instance.
@@ -41,6 +41,18 @@ class RegisterController extends Controller
     }
 
     /**
+     * The user has been registered.
+     */
+    protected function registered(\Illuminate\Http\Request $request, $user)
+    {
+        if (session()->has('pending_invite_token')) {
+            return redirect()->route('invite.accept', session('pending_invite_token'));
+        }
+
+        return redirect($this->redirectPath());
+    }
+
+    /**
      * Get a validator for an incoming registration request.
      *
      * @param  array  $data
@@ -49,12 +61,8 @@ class RegisterController extends Controller
     protected function validator(array $data)
     {
         return Validator::make($data, [
-            'first_name' => ['required', 'string', 'max:255'],
-            'last_name' => ['required', 'string', 'max:255'],
-            'gender' => ['required', 'string', 'max:255'],
-            'phone' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-            'password' => ['required', 'string', 'min:6', 'confirmed'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);
     }
 
@@ -66,13 +74,34 @@ class RegisterController extends Controller
      */
     protected function create(array $data)
     {
-        return User::create([
-            'first_name' => $data['first_name'],
-            'last_name' => $data['last_name'],
+        // Extract first name from email (before @)
+        $emailParts = explode('@', $data['email']);
+        $defaultFirstName = ucfirst($emailParts[0]);
+
+        $user = User::create([
+            'first_name' => $defaultFirstName,
+            'last_name' => null,
             'email' => $data['email'],
-            'phone_number' => $data['phone'],
-            'gender' => $data['gender'],
+            'phone_number' => null,
+            'gender' => null,
             'password' => Hash::make($data['password']),
+            'email_verified_at' => session()->has('pending_invite_token') ? now() : null,
         ]);
+
+        // Assign default "User" role (only if user has no existing role AND is not accepting an invite)
+        // If they are accepting an invite, the role will be assigned in InvitationController@accept
+        if (!$user->roles()->exists() && !session()->has('pending_invite_token')) {
+            $user->assignRole('User');
+        }
+
+        // Send welcome email - Removed to prevent duplicate emails (VerifyEmailNotification covers this)
+        // $user->notify(new \App\Notifications\WelcomeNotification());
+
+        // Only send verification email if not registering via invitation
+        if (!session()->has('pending_invite_token')) {
+            $user->sendEmailVerificationNotification();
+        }
+
+        return $user;
     }
 }

@@ -2,14 +2,14 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     use HasApiTokens, HasFactory, Notifiable, HasRoles;
 
@@ -23,14 +23,18 @@ class User extends Authenticatable
         'last_name',
         'email',
         'gender',
-        'phone',
+        'phone_number',
         'password',
+        'email_verified_at',
+        'is_guest',
+        'role',
+        'google_id',
+        'avatar',
     ];
 
     /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<int, string>
+     * The attributes that should be hidden for serializati
+     * ... (truncated for brevity in diff, keep existing) ...
      */
     protected $hidden = [
         'password',
@@ -39,12 +43,21 @@ class User extends Authenticatable
 
     /**
      * The attributes that should be cast.
-     *
-     * @var array<string, string>
+     * ...
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+
+    public function managedCleaners()
+    {
+        return $this->belongsToMany(User::class, 'admin_cleaner', 'admin_id', 'cleaner_id')->withTimestamps();
+    }
+
+    public function managingAdmins()
+    {
+        return $this->belongsToMany(User::class, 'admin_cleaner', 'cleaner_id', 'admin_id')->withTimestamps();
+    }
 
     public function bookings()
     {
@@ -56,6 +69,12 @@ class User extends Authenticatable
         return $this->hasMany(Review::class);
     }
 
+    public function bookmarkedProperties()
+    {
+        return $this->belongsToMany(Property::class, 'property_bookmarks', 'user_id', 'property_id')
+            ->withTimestamps();
+    }
+
     public function notifications()
     {
         return $this->hasMany(Notification::class);
@@ -64,5 +83,15 @@ class User extends Authenticatable
     public function supportTickets()
     {
         return $this->hasMany(SupportTicket::class);
+    }
+
+    /**
+     * Send the email verification notification.
+     *
+     * @return void
+     */
+    public function sendEmailVerificationNotification()
+    {
+        $this->notify(new \App\Notifications\CustomVerifyEmail);
     }
 }

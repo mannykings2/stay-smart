@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\User;
+use App\Models\Invitation;
 use App\Services\ActivityService;
 use Illuminate\Support\Facades\Auth;
 use Spatie\Permission\Models\Role;
@@ -13,22 +14,74 @@ class RoleAssignmentController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
+        $roles = Role::where('name', 'Cleaner')->get();
+        $invitationRoles = collect(); // Roles available for invitation generation
+        $users = collect();
+        $allUsers = collect();
+        $pendingInvitations = collect();
 
         if ($user->hasRole('Super Admin')) {
-            $users = User::latest()->get();
+            $users = User::whereHas('roles', function ($q) {
+                $q->whereIn('name', ['Admin', 'Cleaner']);
+            })->latest()->get();
+            $allUsers = User::whereDoesntHave('roles', function ($q) {
+                $q->whereIn('name', ['Admin', 'Cleaner', 'Super Admin']);
+            })->orWhereDoesntHave('roles')->latest()->get();
             $roles = Role::all();
-        } else {
-            $users = User::whereDoesntHave('roles', function ($query) {
-                $query->where('name', 'Super Admin');
-            })
-            ->get();
-            $roles = Role::where('name', '!=', 'Super Admin')->get();
+            $invitationRoles = collect(['Cleaner', 'Admin']); // Super Admin can invite Cleaners and Admins
+            $pendingInvitations = Invitation::where('expires_at', '>', now())->latest()->get();
+        } elseif ($user->hasRole('Admin')) {
+            // Admin only sees users who are already Cleaners
+            $users = User::role('Cleaner')->latest()->get();
+            $invitationRoles = collect(['Cleaner']); // Admin can only invite Cleaners
+            $pendingInvitations = Invitation::where('inviter_id', $user->id)
+                ->where('expires_at', '>', now())
+                ->latest()->get();
         }
 
-        return view('roles.assignment', compact('users', 'roles'));
+        return view('roles.assignment', compact('users', 'roles', 'pendingInvitations', 'invitationRoles', 'allUsers'));
+    }
+
+    /**
+     * Invite/Add a cleaner directly.
+     */
+    public function invite(Request $request)
+    {
+        $request->validate([
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'phone_number' => 'required|string|max:255',
+        ]);
+
+        $password = \Illuminate\Support\Str::random(12);
+        $user = User::create([
+            'first_name' => $request->first_name,
+            'last_name' => $request->last_name,
+            'email' => $request->email,
+            'phone_number' => $request->phone_number,
+            'password' => \Illuminate\Support\Facades\Hash::make($password),
+            'role' => 'Admin', // Cleaners are stored as Admin in the database role column
+        ]);
+
+        // If current user is Admin, attach the new cleaner to them
+        if (auth()->user()->hasRole('Admin')) {
+            auth()->user()->managedCleaners()->attach($user->id);
+        }
+
+        // Check if user already has a role
+        if ($user->roles()->exists()) {
+            return redirect()->route('role-assignment.index')->with('error', 'This user already has a role assigned.');
+        }
+
+        $user->assignRole('Cleaner');
+
+        // In a real app, send email here with $password
+
+        return redirect()->route('role-assignment.index')->with('success', 'Cleaner ' . $user->first_name . ' invited and assigned role successfully.');
     }
 
     /**
@@ -42,19 +95,43 @@ class RoleAssignmentController extends Controller
         ]);
 
         $user = User::where('id', $validData['user_id'])->first();
-        if(! $user){
+        if (!$user) {
             return redirect('/role-assignment')->with('error', 'User does not exist.');
         }
 
         $role = Role::where('id', $validData['role_id'])->first();
-        if(! $role){
+        if (!$role) {
             return redirect('/role-assignment')->with('error', 'Role does not exist.');
         }
 
-        if($user->syncRoles([$role->name])){
-            return redirect('/role-assignment')->with('success', 'User {'.$user->username.'} was given the role {'.$role->name.'} successfully.');
+        // Security check for Admin
+        if (Auth::user()->hasRole('Admin')) {
+            if ($role->name !== 'Cleaner') {
+                return redirect('/role-assignment')->with('error', 'You can only assign the Cleaner role.');
+            }
+            if ($user->hasRole('Super Admin') || $user->hasRole('Admin')) {
+                return redirect('/role-assignment')->with('error', 'You cannot modify Super Admin or Admin users.');
+            }
         }
-        return redirect('/role-assignment')->with('error', 'User {'.$user->username.'} could NOT be given the role {'.$role->name.'}');
+
+        // Check if user already has a role (Super Admin can override)
+        if ($user->roles()->exists() && !Auth::user()->hasRole('Super Admin')) {
+            return redirect('/role-assignment')->with('error', 'This user already has a role assigned and cannot be reassigned.');
+        }
+
+        if ($user->syncRoles([$role->name])) {
+            // Sync database role column
+            if (in_array($role->name, ['Admin', 'Cleaner'])) {
+                // Attach to Admin if applicable
+                if ($role->name === 'Cleaner' && Auth::user()->hasRole('Admin')) {
+                    Auth::user()->managedCleaners()->syncWithoutDetaching([$user->id]);
+                }
+                $user->role = 'Admin';
+                $user->save();
+            }
+            return redirect('/role-assignment')->with('success', 'User ' . $user->first_name . ' ' . $user->last_name . ' was given the role ' . $role->name . ' successfully.');
+        }
+        return redirect('/role-assignment')->with('error', 'User ' . $user->first_name . ' ' . $user->last_name . ' could NOT be given the role ' . $role->name);
     }
 
     /**
@@ -62,10 +139,20 @@ class RoleAssignmentController extends Controller
      */
     public function destroy(User $user, Role $role)
     {
-        if($user->removeRole($role->name)){
-            return redirect('/role-assignment')->with('success', 'The role {'.$role->name.'} was removed from User {'.$user->username.'} successfully.');
+        // Security check for Admin
+        if (Auth::user()->hasRole('Admin')) {
+            if ($role->name !== 'Cleaner') {
+                return redirect('/role-assignment')->with('error', 'You can only remove the Cleaner role.');
+            }
+            if ($user->hasRole('Super Admin') || $user->hasRole('Admin')) {
+                return redirect('/role-assignment')->with('error', 'You cannot modify Super Admin or Admin users.');
+            }
         }
 
-        return redirect('/role-assignment')->with('error', 'The role {'.$role->name.'} was removed from User {'.$user->username.'}.');
+        if ($user->removeRole($role->name)) {
+            return redirect('/role-assignment')->with('success', 'The role ' . $role->name . ' was removed from User ' . $user->first_name . ' ' . $user->last_name . ' successfully.');
+        }
+
+        return redirect('/role-assignment')->with('error', 'The role ' . $role->name . ' was removed from User ' . $user->first_name . ' ' . $user->last_name . '.');
     }
 }

@@ -27,9 +27,15 @@ class Property extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function images()
+    {
+        return $this->hasMany(PropertyImage::class);
+    }
+
     public function amenities()
     {
-        return $this->belongsToMany(Amenity::class, 'property_amenities');
+        return $this->belongsToMany(Amenity::class, 'property_amenities', 'property_id', 'amenity_id')
+            ->withTimestamps();
     }
 
     public function bookings()
@@ -40,6 +46,12 @@ class Property extends Model
     public function reviews()
     {
         return $this->hasMany(Review::class);
+    }
+
+    public function bookmarkedByUsers()
+    {
+        return $this->belongsToMany(User::class, 'property_bookmarks', 'property_id', 'user_id')
+            ->withTimestamps();
     }
 
     public function getFullLocationAttribute()

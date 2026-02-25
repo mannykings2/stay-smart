@@ -21,12 +21,12 @@
                         <input type="text" id="dropoff_location" name="dropoff_location" class="form-control" placeholder="Enter drop-off location" required>
                     </div>
                     <div class="form-group">
-                        <label for="service_date">Date</label>
-                        <input type="date" id="service_date" name="service_date" class="form-control" required>
+                        <label for="ride_date">Date</label>
+                        <input type="date" id="ride_date" name="ride_date" class="form-control" required>
                     </div>
                     <div class="form-group">
                         <label for="service_time">Time</label>
-                        <input type="time" id="service_time" name="service_time" class="form-control" required>
+                        <input type="time" id="ride_time" name="ride_time" class="form-control" required>
                     </div>
                     <input type="hidden" name="driver_id" id="driver_id" required>
                     <button type="submit" class="btn btn-primary mt-3 px-4">Book Now</button>

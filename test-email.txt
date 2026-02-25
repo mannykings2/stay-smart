@@ -1,0 +1,8 @@
+php artisan tinker
+use Illuminate\Support\Facades\Mail;
+Mail::raw('This is a test email from Stay Smart', function($message) {
+    $message->to('hacktivistjnr@gmail.com')
+            ->subject('Test Email - Stay Smart');
+});
+echo "Email sent!";
+exit
