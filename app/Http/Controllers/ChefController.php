@@ -8,6 +8,7 @@ use App\Models\ChefService;
 use App\Models\ChefServiceType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class ChefController extends Controller
 {
@@ -44,7 +45,7 @@ class ChefController extends Controller
         ]);
 
         if ($request->hasFile('image')) {
-            $imageName = time().'_'.$request->image->getClientOriginalName();
+            $imageName = time() . '_' . $request->image->getClientOriginalName();
             $request->image->move(public_path('uploads/chefs'), $imageName);
             $validated['image'] = 'uploads/chefs/' . $imageName;
         }
@@ -76,35 +77,37 @@ class ChefController extends Controller
      * Book a chef.
      */
 
-     public function storeBooking(Request $request)
-     {
-         try {
-             $service = ChefServiceType::where('id', $request->chef_service)->first();
+    public function storeBooking(Request $request)
+    {
 
-             if (!$service) {
-                 return response()->json(['error' => true, 'message' => 'Service not found', 'booking' => '']);
-             }
+        try {
+            $service = ChefServiceType::where('id', $request->chef_service)->first();
 
-             // Generate booking ID
-             $bookingId = 'CHEF-' . strtoupper(fake()->bothify('????-#####'));
+            if (!$service) {
+                return response()->json(['error' => true, 'message' => 'Service not found', 'booking' => '']);
+            }
 
-             $booking = ChefBooking::create([
-                 'user_id' => Auth::id(),
-                 'chef_id' => $request->chef_id,
-                 'chef_service_type_id' => $request->chef_service,
-                 'price' => $service->price,
-                 'booking_id' => $bookingId,
-                 'service_date' => $request->service_date,
-                 'service_time' => $request->service_time,
-                 'status' => 'Scheduled',
-             ]);
+            // Generate booking ID
+            $reference = 'CHEF-' . Str::upper(Str::random(4)) . '-' . rand(10000, 99999);
 
-         } catch (\Exception $th) {
-             return response()->json(['error' => true, 'message' => $th->getMessage(), 'booking' => '']);
-         }
+            $booking = ChefBooking::create([
+                'user_id' => Auth::id(),
+                'chef_id' => $request->chef_id,
+                'chef_service_type_id' => $request->chef_service,
+                'price' => $service->price,
+                'reference' => $reference,
+                'booking_id' => $request->booking_id,
+                'service_date' => $request->service_date,
+                'service_time' => $request->service_time,
+                'status' => 'Scheduled',
+            ]);
 
-         return response()->json(['success' => true, 'message' => 'Booking successful!', 'booking' => $booking]);
-     }
+        } catch (\Exception $th) {
+            return response()->json(['error' => true, 'message' => $th->getMessage(), 'booking' => '']);
+        }
+
+        return response()->json(['success' => true, 'message' => 'Booking successful!', 'booking' => $booking]);
+    }
 
 
     public function markAsAvailable($id)

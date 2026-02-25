@@ -17,7 +17,9 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->foreignId('chef_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('chef_service_type_id')->constrained()->cascadeOnDelete();
             $table->foreignId('booking_id')->nullable()->constrained()->cascadeOnDelete();
+            $table->string('reference')->nullable();
             $table->date('service_date');
             $table->time('service_time');
             $table->decimal('price', 10, 2);

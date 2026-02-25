@@ -13,11 +13,13 @@ class ChefBooking extends Model
         'user_id',
         'chef_id',
         'chef_service_type_id',
+        'reference',
         'price',
         'booking_id',
         'service_date',
         'service_time',
-        'status'];
+        'status'
+    ];
 
     public function chef()
     {
@@ -27,5 +29,10 @@ class ChefBooking extends Model
     public function chefServiceType()
     {
         return $this->belongsTo(ChefServiceType::class);
+    }
+
+    public function booking()
+    {
+        return $this->belongsTo(Booking::class);
     }
 }

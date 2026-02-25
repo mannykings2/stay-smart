@@ -9,14 +9,17 @@ class DriverBooking extends Model
 {
     use HasFactory;
 
+    protected $table = 'ride_bookings';
+
     protected $fillable = [
         'user_id',
         'driver_id',
         'driver_service_type_id',
         'price',
+        'reference',
         'booking_id',
-        'service_date',
-        'service_time',
+        'ride_date',
+        'ride_time',
         'pickup_location',
         'dropoff_location',
         'status'
@@ -35,5 +38,10 @@ class DriverBooking extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function booking()
+    {
+        return $this->belongsTo(Booking::class);
     }
 }

@@ -9,8 +9,13 @@ class Amenity extends Model
 {
     use HasFactory;
 
+    protected $fillable = [
+        'name'
+    ];
+
     public function properties()
     {
-        return $this->belongsToMany(Property::class, 'property_amenities');
+        return $this->belongsToMany(Property::class, 'property_amenities', 'amenity_id', 'property_id')
+        ->withTimestamps();
     }
 }

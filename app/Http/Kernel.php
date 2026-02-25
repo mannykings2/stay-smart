@@ -63,5 +63,9 @@ class Kernel extends HttpKernel
         'signed' => \App\Http\Middleware\ValidateSignature::class,
         'throttle' => \Illuminate\Routing\Middleware\ThrottleRequests::class,
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
+        'restrict.cleaner' => \App\Http\Middleware\RestrictCleanerAccess::class,
+        'restrict.admin.chef.driver' => \App\Http\Middleware\RestrictAdminChefDriver::class,
+        'restrict.superadmin' => \App\Http\Middleware\RestrictToSuperAdmin::class,
+        'allow.admin.superadmin' => \App\Http\Middleware\AllowAdminAndSuperAdmin::class,
     ];
 }

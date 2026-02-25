@@ -28,6 +28,18 @@ class LoginController extends Controller
     protected $redirectTo = '/home';
 
     /**
+     * The user has been authenticated.
+     */
+    protected function authenticated(\Illuminate\Http\Request $request, $user)
+    {
+        if (session()->has('pending_invite_token')) {
+            return redirect()->route('invite.accept', session('pending_invite_token'));
+        }
+
+        return redirect()->intended($this->redirectPath());
+    }
+
+    /**
      * Create a new controller instance.
      *
      * @return void

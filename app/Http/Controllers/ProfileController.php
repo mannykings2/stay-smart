@@ -10,7 +10,8 @@ use Illuminate\Support\Facades\Validator;
 class ProfileController extends Controller
 {
 
-    public function index(){
+    public function index()
+    {
         return view('profile.index');
     }
 
@@ -19,14 +20,31 @@ class ProfileController extends Controller
      */
     public function updateProfile(Request $request)
     {
-        $request->validate([
-            'first_name' => 'required|string|max:255',
-            'last_name' => 'required|string|max:255',
-        ]);
-
         $user = Auth::user();
-        $user->first_name = $request->first_name;
-        $user->last_name = $request->last_name;
+
+        $rules = [
+            'phone_number' => 'nullable|string|max:255',
+            'gender' => 'nullable|string|in:Male,Female,Other',
+        ];
+
+        if (!$user->first_name) {
+            $rules['first_name'] = 'required|string|max:255';
+        }
+
+        if (!$user->last_name) {
+            $rules['last_name'] = 'required|string|max:255';
+        }
+
+        $request->validate($rules);
+
+        if ($request->has('first_name')) {
+            $user->first_name = $request->first_name;
+        }
+        if ($request->has('last_name')) {
+            $user->last_name = $request->last_name;
+        }
+        $user->phone_number = $request->phone_number;
+        $user->gender = $request->gender;
         $user->save();
 
         return redirect()->back()->with('success', 'Profile updated successfully.');
@@ -52,5 +70,27 @@ class ProfileController extends Controller
         $user->save();
 
         return redirect()->back()->with('success', 'Password updated successfully.');
+    }
+
+    /**
+     * Set password for guest account.
+     */
+    public function setGuestPassword(Request $request)
+    {
+        $request->validate([
+            'password' => 'required|min:8|confirmed',
+        ]);
+
+        $user = Auth::user();
+
+        if (!$user->is_guest) {
+            return redirect()->back()->with('error', 'Account is already secured.');
+        }
+
+        $user->password = Hash::make($request->password);
+        $user->is_guest = false;
+        $user->save();
+
+        return redirect()->back()->with('success', 'Password set successfully! Your account is now permanent.');
     }
 }

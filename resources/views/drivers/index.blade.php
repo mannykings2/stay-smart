@@ -14,15 +14,14 @@
                                     <thead>
                                         <tr>
                                             <th>#</th>
-                                            <th>Image</th>
+                                            <th class="d-none d-md-table-cell">Image</th>
                                             <th>Full Name</th>
-                                            <th>Specialty</th>
-                                            <th>Phone Number</th>
+                                            <th class="d-none d-md-table-cell">Phone Number</th>
                                             <th>Vehicle Details</th>
-                                            <th>License Number</th>
-                                            <th>Service</th>
-                                            <th>Price (₦)</th>
-                                            <th>Status</th>
+                                            <th class="d-none d-md-table-cell">License Number</th>
+                                            <th class="d-none d-md-table-cell">Service</th>
+                                            <th class="d-none d-md-table-cell">Price (₦)</th>
+                                            <th class="d-none d-md-table-cell">Status</th>
                                             <th>Actions</th>
                                         </tr>
                                     </thead>
@@ -30,7 +29,7 @@
                                         @foreach ($drivers as $index => $driver)
                                         <tr>
                                             <td>{{ $index + 1 }}</td>
-                                            <td>
+                                            <td class="d-none d-md-table-cell">
                                                 @if($driver->image)
                                                     <img src="{{ asset($driver->image) }}" width="40" height="40" class="rounded-circle shadow-sm" />
                                                 @else
@@ -38,13 +37,12 @@
                                                 @endif
                                             </td>
                                             <td>{{ $driver->first_name }} {{ $driver->last_name }}</td>
-                                            <td>{{ $driver->specialty ?? 'N/A' }}</td>
-                                            <td>{{ $driver->phone_number }}</td>
+                                            <td class="d-none d-md-table-cell">{{ $driver->phone_number }}</td>
                                             <td>{{ $driver->vehicle_details }}</td>
-                                            <td>{{ $driver->license_number }}</td>
-                                            <td>{{ optional($driver->driverServices->first())->name ?? 'N/A' }}</td>
-                                            <td>{{ count($driver->driverServices) > 0 ? number_format(optional($driver->driverServices->first())->pivot->price) : '-' }}</td>
-                                            <td>
+                                            <td class="d-none d-md-table-cell">{{ $driver->license_number }}</td>
+                                            <td class="d-none d-md-table-cell">{{ optional($driver->driverServices->first())->name ?? 'N/A' }}</td>
+                                            <td class="d-none d-md-table-cell">{{ count($driver->driverServices) > 0 ? number_format(optional($driver->driverServices->first())->pivot->price) : '-' }}</td>
+                                            <td class="d-none d-md-table-cell">
                                                 <span class="badge bg-{{ $driver->availability_status == 'Available' ? 'success' : 'warning' }}">
                                                     {{ $driver->availability_status }}
                                                 </span>

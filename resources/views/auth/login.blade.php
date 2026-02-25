@@ -10,12 +10,12 @@
                             <h5 class="card-title">Sign In</h5>
                             @if (Session::has('message'))
 
-                            <div class="alert alert-danger alert-dismissible show" role="alert">
-                                <strong>{{ Session::get('message') }}</strong>
-                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                                    <span aria-hidden="true">&times;</span>
-                                </button>
-                            </div>
+                                <div class="alert alert-danger alert-dismissible show" role="alert">
+                                    <strong>{{ Session::get('message') }}</strong>
+                                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
 
                             @endif
                             <form class="form-body" method="POST">
@@ -24,11 +24,11 @@
                                     <div class="col-12">
                                         <label for="inputEmailAddress" class="form-label">Email Address</label>
                                         <div class="ms-auto position-relative">
-                                            <div
-                                                class="position-absolute top-50 translate-middle-y search-icon px-3">
+                                            <div class="position-absolute top-50 translate-middle-y search-icon px-3">
                                                 <i class="bi bi-envelope-fill"></i>
                                             </div>
-                                            <input type="email" name="email" value="{{ old('email') }}" class="form-control radius-30 ps-5 @error('email') is-invalid @enderror"
+                                            <input type="email" name="email" value="{{ old('email') }}"
+                                                class="form-control radius-30 ps-5 @error('email') is-invalid @enderror"
                                                 id="inputEmailAddress" placeholder="Email Address" required>
                                         </div>
                                         @error('email')
@@ -40,13 +40,12 @@
                                     <div class="col-12">
                                         <label for="inputChoosePassword" class="form-label">Enter Password</label>
                                         <div class="ms-auto position-relative">
-                                            <div
-                                                class="position-absolute top-50 translate-middle-y search-icon px-3">
+                                            <div class="position-absolute top-50 translate-middle-y search-icon px-3">
                                                 <i class="bi bi-lock-fill"></i>
                                             </div>
                                             <input type="password" name="password"
-                                                class="form-control radius-30 ps-5 @error('password') is-invalid @enderror" id="inputChoosePassword"
-                                                placeholder="Enter Password" required>
+                                                class="form-control radius-30 ps-5 @error('password') is-invalid @enderror"
+                                                id="inputChoosePassword" placeholder="Enter Password" required>
                                         </div>
                                         @error('password')
                                             <small class="text-danger" role="alert">
@@ -56,14 +55,14 @@
                                     </div>
                                     <div class="col-6">
                                         <div class="form-check form-switch">
-                                            <input class="form-check-input" type="checkbox"
+                                            <input class="form-check-input" type="checkbox" name="remember"
                                                 id="flexSwitchCheckChecked" checked="">
                                             <label class="form-check-label" for="flexSwitchCheckChecked">Remember
                                                 Me</label>
                                         </div>
                                     </div>
-                                    <div class="col-6 text-end"> <a
-                                            href="#">Forgot Password ?</a>
+                                    <div class="col-6 text-end"> <a href="{{ route('password.request') }}">Forgot Password
+                                            ?</a>
                                     </div>
                                     <div class="col-12">
                                         <div class="d-grid">
@@ -71,7 +70,23 @@
                                         </div>
                                     </div>
                                     <div class="col-12">
-                                        <p class="text-center mb-0 mt-2">Don't have an account? <a href="/register">Sign Up</a> </p>
+                                        <div class="login-separater text-center mb-0"> <span>OR SIGN IN WITH EMAIL</span>
+                                            <hr>
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="d-grid">
+                                            <a href="{{ route('auth.google') }}"
+                                                class="btn btn-white radius-30 border d-flex align-items-center justify-content-center gap-2">
+                                                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+                                                    alt="" width="20">
+                                                Continue with Google
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <p class="text-center mb-0 mt-2">Don't have an account? <a href="/register">Sign
+                                                Up</a> </p>
                                     </div>
                                 </div>
                             </form>

@@ -8,6 +8,7 @@ use App\Models\DriverService;
 use App\Models\DriverServiceType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class DriverController extends Controller
 {
@@ -37,7 +38,6 @@ class DriverController extends Controller
         $validated = $request->validate([
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
-            // 'specialty' => 'nullable|string|max:255',
             'phone_number' => 'required|string|unique:drivers,phone_number',
             'vehicle_details' => 'required|string|max:255',
             'license_number' => 'required|string|unique:drivers,license_number',
@@ -46,9 +46,14 @@ class DriverController extends Controller
         ]);
 
         if ($request->hasFile('image')) {
-            $imageName = time().'_'.$request->image->getClientOriginalName();
+            $imageName = time() . '_' . $request->image->getClientOriginalName();
             $request->image->move(public_path('uploads/drivers'), $imageName);
             $validated['image'] = 'uploads/drivers/' . $imageName;
+
+
+            // Debug: log the path
+            \Log::info('Driver image saved to: ' . $validated['image']);
+            \Log::info('Full URL would be: ' . asset($validated['image']));
         }
 
         Driver::create($validated);
@@ -78,35 +83,38 @@ class DriverController extends Controller
      * Book a driver.
      */
 
-     public function storeBooking(Request $request)
-     {
-         try {
-             $service = DriverServiceType::where('id', $request->driver_service)->first();
+    public function storeBooking(Request $request)
+    {
+        try {
+            $service = DriverServiceType::where('id', $request->driver_service)->first();
 
-             if (!$service) {
-                 return response()->json(['error' => true, 'message' => 'Service not found', 'booking' => '']);
-             }
+            if (!$service) {
+                return response()->json(['error' => true, 'message' => 'Service not found', 'booking' => '']);
+            }
 
-             // Generate booking ID
-             $bookingId = 'DRIVER-' . strtoupper(fake()->bothify('????-#####'));
+            // Generate booking ID
+            $reference = 'DRIVER-' . Str::upper(Str::random(4)) . '-' . rand(10000, 99999);
 
-             $booking = DriverBooking::create([
-                 'user_id' => Auth::id(),
-                 'driver_id' => $request->driver_id,
-                 'driver_service_type_id' => $request->driver_service,
-                 'price' => $service->price,
-                 'booking_id' => $bookingId,
-                 'service_date' => $request->service_date,
-                 'service_time' => $request->service_time,
-                 'status' => 'Scheduled',
-             ]);
+            $booking = DriverBooking::create([
+                'user_id' => Auth::id(),
+                'driver_id' => $request->driver_id,
+                'driver_service_type_id' => $request->driver_service,
+                'price' => $service->price,
+                'booking_id' => $request->booking_id,
+                'reference' => $reference,
+                'pickup_location' => $request->pickup_location,
+                'dropoff_location' => $request->dropoff_location,
+                'ride_date' => $request->ride_date,
+                'ride_time' => $request->ride_time,
+                'status' => 'Scheduled',
+            ]);
 
-         } catch (\Exception $th) {
-             return response()->json(['error' => true, 'message' => $th->getMessage(), 'booking' => '']);
-         }
+        } catch (\Exception $th) {
+            return response()->json(['error' => true, 'message' => $th->getMessage(), 'booking' => '']);
+        }
 
-         return response()->json(['success' => true, 'message' => 'Booking successful!', 'booking' => $booking]);
-     }
+        return response()->json(['success' => true, 'message' => 'Booking successful!', 'booking' => $booking]);
+    }
 
 
     public function markAsAvailable($id)

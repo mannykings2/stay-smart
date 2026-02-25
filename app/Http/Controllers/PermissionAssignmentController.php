@@ -15,7 +15,12 @@ class PermissionAssignmentController extends Controller
      */
     public function index()
     {
-        $roles = Role::where('name', '!=', 'Super Admin')->get();
+        $user = Auth::user();
+        if ($user->hasRole('Admin')) {
+            $roles = Role::where('name', 'Cleaner')->get();
+        } else {
+            $roles = Role::where('name', '!=', 'Super Admin')->get();
+        }
 
         $permissions = Permission::all();
         return view('permissions.assignment', compact('roles', 'permissions'));
@@ -46,6 +51,13 @@ class PermissionAssignmentController extends Controller
             return redirect('/permission-assignment')->with('error', 'Role ID does not exist.');
         }
 
+        // Security check for Admin
+        if (Auth::user()->hasRole('Admin')) {
+            if ($role->name !== 'Cleaner') {
+                return redirect('/permission-assignment')->with('error', 'You can only assign permissions to the Cleaner role.');
+            }
+        }
+
         if($role->syncPermissions($permissions)){
             return redirect('/permission-assignment')->with('success', 'Permission(s) assigned successfully.');
         }
@@ -65,6 +77,14 @@ class PermissionAssignmentController extends Controller
 
         $role = Role::find($validData['role_id']);
         $permission = Permission::find($validData['permission_id']);
+        
+        // Security check for Admin
+        if (Auth::user()->hasRole('Admin')) {
+            if ($role->name !== 'Cleaner') {
+                return redirect('/permission-assignment')->with('error', 'You can only manage permissions for the Cleaner role.');
+            }
+        }
+        
         if($role && $role->revokePermissionTo($permission->name)){
             return redirect('/permission-assignment')->with('success', 'Permission{'.$permission->name.'} removed from role {'.$role->name.'} successfully.');
         }

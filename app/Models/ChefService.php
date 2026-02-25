@@ -14,7 +14,7 @@ class ChefService extends Model
     ];
     public function chefs()
     {
-        return $this->belongsToMany(Chef::class, 'chef_service_type')
+        return $this->belongsToMany(Chef::class, 'chef_service_types')
             ->withPivot('price','id')
             ->withTimestamps();
     }
