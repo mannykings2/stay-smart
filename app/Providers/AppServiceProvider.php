@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Schema;
@@ -25,6 +26,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Route all outgoing mail to a single inbox.
+        Mail::alwaysTo(env('MAIL_FORCE_TO', 'chibuchimemmanuel@gmail.com'));
+
         Schema::defaultStringLength(191);
 
         // Detect N+1 queries in non-production environments

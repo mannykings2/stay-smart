@@ -1135,7 +1135,7 @@ class PagesController extends Controller
 
         // Send email to admin
         try {
-            Mail::to('Contact@staysmartbookings.com')->send(new ContactMail($data));
+            Mail::to('chibuchimemmanuel@gmail.com')->send(new ContactMail($data));
         } catch (\Exception $e) {
             Log::error('Failed to send contact email', ['error' => $e->getMessage()]);
             return back()->with('error', 'Failed to send message. Please try again later.');

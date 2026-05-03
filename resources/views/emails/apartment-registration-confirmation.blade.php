@@ -87,7 +87,7 @@
             </p>
 
             <p>If you have any questions in the meantime, please don't hesitate to contact us at <a
-                    href="mailto:staysmartbookings@gmail.com">staysmartbookings@gmail.com</a> or call <a
+                    href="mailto:chibuchimemmanuel@gmail.com">chibuchimemmanuel@gmail.com</a> or call <a
                     href="tel:+2347044479938">+(234) 704 447 9938</a>.</p>
 
             <p>We look forward to partnering with you!</p>
