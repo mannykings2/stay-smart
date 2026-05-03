@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\User;
+use App\Models\Property;
 use App\Models\Invitation;
 use App\Services\ActivityService;
 use Illuminate\Support\Facades\Auth;
@@ -154,5 +155,164 @@ class RoleAssignmentController extends Controller
         }
 
         return redirect('/role-assignment')->with('error', 'The role ' . $role->name . ' was removed from User ' . $user->first_name . ' ' . $user->last_name . '.');
+    }
+
+    /**
+     * Get properties for a user (AJAX).
+     */
+    public function getProperties(User $user)
+    {
+        $authUser = Auth::user();
+        $isSuperAdmin = $authUser->hasRole('Super Admin');
+        $isAdmin = $user->hasRole('Admin');
+        $isCleaner = $user->hasRole('Cleaner');
+        
+        $ownedProperties = collect();
+        $staffAssignments = collect();
+
+        if ($isAdmin) {
+            // Admins can only be OWNERS (via user_id column)
+            $ownedProperties = Property::where('user_id', $user->id)->get();
+        }
+
+        if ($isCleaner) {
+            // Cleaners can only be STAFF (via pivot table with role_type = 'cleaner')
+            // Note: Even if an Admin was accidentally assigned as staff, we won't show it here for strict enforcement.
+            $staffAssignments = $user->assignedProperties()
+                ->where('role_type', 'cleaner')
+                ->get();
+        }
+
+        // Available properties depend on who's asking
+        if ($isSuperAdmin) {
+            $allProperties = Property::with('user:id,first_name,last_name')->get();
+        } else {
+            // Admin can only see properties they own
+            $allProperties = Property::where('user_id', $authUser->id)->with('user:id,first_name,last_name')->get();
+        }
+
+        return response()->json([
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->first_name . ' ' . $user->last_name,
+                'is_admin' => $isAdmin,
+                'is_cleaner' => $isCleaner,
+            ],
+            'owned' => $ownedProperties->map(fn($p) => [
+                'id' => $p->id,
+                'name' => $p->name,
+                'address' => $p->address,
+                'city' => $p->city,
+            ]),
+            'staff' => $staffAssignments->map(fn($p) => [
+                'id' => $p->id,
+                'name' => $p->name,
+                'address' => $p->address,
+                'city' => $p->city,
+            ]),
+            'available' => $allProperties->map(fn($p) => [
+                'id' => $p->id,
+                'name' => $p->name,
+                'address' => $p->address,
+                'city' => $p->city,
+                'owner_id' => $p->user_id,
+                'owner_name' => $p->user ? $p->user->first_name . ' ' . $p->user->last_name : 'Unassigned',
+            ]),
+        ]);
+    }
+
+    /**
+     * Sync property assignments for a user (AJAX).
+     */
+    public function syncProperties(Request $request, User $user)
+    {
+        $authUser = Auth::user();
+        $isSuperAdmin = $authUser->hasRole('Super Admin');
+        $type = $request->input('type', 'staff'); // 'ownership' or 'staff'
+
+        $request->validate([
+            'property_ids' => 'array',
+            'property_ids.*' => 'integer|exists:properties,id',
+            'type' => 'required|in:ownership,staff',
+        ]);
+
+        $propertyIds = $request->input('property_ids', []);
+
+        if ($type === 'ownership') {
+            // STRICT ENFORCEMENT: Only Admins can be set as Owners
+            if (!$user->hasRole('Admin')) {
+                return response()->json(['success' => false, 'message' => 'Ownership can only be assigned to users with the Admin role. Cleaners cannot own properties.'], 422);
+            }
+            if (!$isSuperAdmin) {
+                return response()->json(['success' => false, 'message' => 'Only Super Admin can change property ownership.'], 403);
+            }
+
+            $forceOverwrite = $request->boolean('force', false);
+
+            // Detect conflicts
+            $conflicts = Property::whereIn('id', $propertyIds)
+                ->where(function($q) use ($user, $authUser) {
+                    $q->where('user_id', '!=', $user->id)
+                      ->where('user_id', '!=', $authUser->id);
+                })
+                ->whereNotNull('user_id')
+                ->with('user:id,first_name,last_name')
+                ->get();
+
+            if ($conflicts->isNotEmpty() && !$forceOverwrite) {
+                return response()->json([
+                    'success' => false,
+                    'conflicts' => true,
+                    'message' => 'Some properties are already owned by other admins.',
+                    'conflict_details' => $conflicts->map(fn($p) => [
+                        'id' => $p->id,
+                        'name' => $p->name,
+                        'current_owner' => $p->user ? $p->user->first_name . ' ' . $p->user->last_name : 'System',
+                    ]),
+                ]);
+            }
+
+            Property::whereIn('id', $propertyIds)->update(['user_id' => $user->id]);
+
+            $currentOwned = Property::where('user_id', $user->id)->pluck('id')->toArray();
+            $toRelease = array_diff($currentOwned, $propertyIds);
+            if (!empty($toRelease)) {
+                Property::whereIn('id', $toRelease)->update(['user_id' => $authUser->id]);
+            }
+
+            // Sync tracked owner status in pivot for legacy purposes
+            $syncData = [];
+            foreach ($propertyIds as $pid) {
+                $syncData[$pid] = ['role_type' => 'admin'];
+            }
+            $user->assignedProperties()->where('role_type', 'admin')->sync($syncData);
+
+        } else {
+            // STAFF (CLEANER) ASSIGNMENT
+            // STRICT ENFORCEMENT: Admins cannot be set as Cleaning Staff
+            if ($user->hasRole('Admin')) {
+                return response()->json(['success' => false, 'message' => 'Admins cannot be assigned as cleaning staff. They are restricted to property management.'], 422);
+            }
+
+            if (!$isSuperAdmin) {
+                $ownedIds = Property::where('user_id', $authUser->id)->pluck('id')->toArray();
+                $propertyIds = array_intersect($propertyIds, $ownedIds);
+                
+                $otherAssignments = $user->assignedProperties()
+                    ->where('role_type', 'cleaner')
+                    ->whereNotIn('properties.id', $ownedIds)
+                    ->pluck('properties.id')->toArray();
+                $propertyIds = array_merge($propertyIds, $otherAssignments);
+            }
+
+            $syncData = [];
+            foreach ($propertyIds as $pid) {
+                $syncData[$pid] = ['role_type' => 'cleaner'];
+            }
+            
+            $user->assignedProperties()->where('role_type', 'cleaner')->sync($syncData);
+        }
+
+        return response()->json(['success' => true, 'message' => 'Assignments updated successfully.']);
     }
 }

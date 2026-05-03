@@ -12,7 +12,9 @@ class DriverServiceType extends Model
     protected $fillable = [
         'driver_id',
         'driver_service_id',
-        'price'
+        'price',
+        'base_price',
+        'per_unit_price'
     ];
 
     public function driver()

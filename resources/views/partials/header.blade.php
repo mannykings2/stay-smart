@@ -24,7 +24,7 @@
                     <li class="nav-item dropdown dropdown-user-setting">
                         <a class="nav-link dropdown-toggle dropdown-toggle-nocaret" href="#" data-bs-toggle="dropdown">
                             <div class="user-setting d-flex align-items-center">
-                                <img src="https://ui-avatars.com/api/?name={{auth()->user()->first_name . '+' . auth()->user()->last_name}}"
+                                <img src="https://ui-avatars.com/api/?name={{ optional(auth()->user())->first_name . '+' . optional(auth()->user())->last_name }}"
                                     class="user-img" alt="">
                             </div>
                         </a>
@@ -32,13 +32,13 @@
                             <li>
                                 <a class="dropdown-item" href="#">
                                     <div class="d-flex align-items-center">
-                                        <img src="https://ui-avatars.com/api/?name={{auth()->user()->first_name . '+' . auth()->user()->last_name}}"
+                                        <img src="https://ui-avatars.com/api/?name={{ optional(auth()->user())->first_name . '+' . optional(auth()->user())->last_name }}"
                                             alt="" class="rounded-circle" width="54" height="54">
                                         <div class="ms-3">
                                             <h6 class="mb-0 dropdown-user-name">
-                                                {{auth()->user()->first_name . ' ' . auth()->user()->last_name}}
+                                                {{ optional(auth()->user())->first_name . ' ' . optional(auth()->user())->last_name }}
                                             </h6>
-                                            <p class="mb-0">My Points: 459</p>
+                                            <!--<p class="mb-0">: 459</p>-->
                                         </div>
                                     </div>
                                 </a>

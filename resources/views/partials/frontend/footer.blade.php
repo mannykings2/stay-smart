@@ -38,11 +38,11 @@
                                                         class="fa-solid fa-arrow-right"></i></button>
                                             </div>
                                         </div>
-                                        @if(session('success'))
+                                        @if(session('contact_success'))
                                             <div class="col-lg-12">
                                                 <div class="space16"></div>
                                                 <div class="alert alert-success">
-                                                    {{ session('success') }}
+                                                    {{ session('contact_success') }}
                                                 </div>
                                             </div>
                                         @endif

@@ -291,6 +291,7 @@
 
 <body class="homepage10-body">
 
+  @include('partials.frontend.pending_booking_alert')
   @include('partials.frontend.header')
 
   <!--===== APARTMENT AREA STARTS =======-->
@@ -384,28 +385,28 @@
                   <div class="d-flex justify-content-between align-items-center">
                     <a href="javascript:void(0);">{{$property->name}}</a>
                     <!--<span
-                                                      class="badge bg-{{ $property->status == 'Available' ? 'success' : ($property->status == 'Booked' ? 'danger' : 'danger') }}"
-                                                      style="font-size: 10px;">
-                                                      {{ $property->status }}
-                                                    </span>-->
+                                                              class="badge bg-{{ $property->status == 'Available' ? 'success' : ($property->status == 'Booked' ? 'danger' : 'danger') }}"
+                                                              style="font-size: 10px;">
+                                                              {{ $property->status }}
+                                                            </span>-->
                   </div>
 
                   <div class="space16"></div>
                   <p style="font-size: 13px">{{$property->address}}, {{$property->city}}</p>
                   <div class="space24"></div>
                   <!--<ul>
-                                                @foreach($property->amenities as $amenity)
-                                                  <li><a href="#" style="font-size: 14px; margin-bottom: 5px;">{{$amenity->name}}</a></li>
-                                                @endforeach
-                                              </ul>
-                                              <div class="space28"></div>-->
+                                                        @foreach($property->amenities as $amenity)
+                                                          <li><a href="#" style="font-size: 14px; margin-bottom: 5px;">{{$amenity->name}}</a></li>
+                                                        @endforeach
+                                                      </ul>
+                                                      <div class="space28"></div>-->
                   <div class="btn-area1">
                     <div class="single-btn">
                       <a href="#">₦ {{$property->price_per_night}}</a>
                     </div>
                     <div class="single-btn">
                       <a class="header-btn11" href="{{ url('/book_now') . '?' . $queryParams }}" {{--
-                        href="{{route('booking.book', $property->id)}}" --}} style="font-size: 14px">Book Now</a>
+                        href="{{route('booking.book', $property->id)}}" --}} style="font-size: 14px">Book</a>
                     </div>
                   </div>
                 </div>

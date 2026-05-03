@@ -85,6 +85,7 @@
 
 <body class="homepage10-body">
 
+  @include('partials.frontend.pending_booking_alert')
   @include('partials.frontend.header')
   <!--===== HERO AREA STARTS =======-->
   <div class="hero10-section-area">
@@ -262,7 +263,8 @@
                     <img src="assets/img/all-images/about/Book.jpeg" alt="" style="height: 250px">
                   </div>
                 </div>
-                <div class="space20"></div>
+                <div class="space10 d-block d-md-none"></div>
+                <div class="space20 d-none d-md-block"></div>
                 <div class="d-flex justify-content-between heading7">
                   <h2 class="" data-aos="fade-left" data-aos-duration="800" style="font-size: 25px"> Book Apartments
                   </h2>
@@ -289,7 +291,7 @@
               <a href="{{route('register.apartment')}}">
                 <div class="property-images">
                   <div class="img1 reveal image-anime">
-                    <img src="assets/img/all-images/about/Register.jpeg" alt="" style="height: 250px">
+                    <img src="assets/img/all-images/about/register2.jpeg" alt="" style="height: 250px">
                   </div>
                 </div>
                 <div class="space20"></div>
@@ -320,7 +322,7 @@
               <a href="{{route('home')}}">
                 <div class="property-images">
                   <div class="img1 reveal image-anime">
-                    <img src="assets/img/all-images/about/Ride.jpeg" alt="" style="height: 250px">
+                    <img src="assets/img/all-images/about/ride2.jpeg" alt="" style="height: 250px">
                   </div>
                 </div>
                 <div class="space20"></div>
@@ -521,7 +523,7 @@
                   <img src="assets/img/all-images/about/Abuja2.jpeg" alt="" style="height: 250px">
                 </div>
               </div>
-              <div class="space20"></div>
+              <!--<div class="space20"></div>-->
               <div class="d-flex justify-content-between heading7">
                 <h2 class="" data-aos="fade-left" data-aos-duration="800" style="font-size: 25px"> Abuja</h2>
               </div>
@@ -534,7 +536,7 @@
                   <img src="assets/img/all-images/about/Lagos2.jpeg" alt="" style="height: 250px">
                 </div>
               </div>
-              <div class="space20"></div>
+              <!--<div class="space20"></div>-->
               <div class="d-flex justify-content-between heading7">
                 <h2 class="" data-aos="fade-left" data-aos-duration="800" style="font-size: 25px"> Lagos</h2>
               </div>
@@ -547,7 +549,7 @@
                   <img src="assets/img/all-images/about/PH2.jpeg" alt="" style="height: 250px">
                 </div>
               </div>
-              <div class="space20"></div>
+              <!--<div class="space20"></div>-->
               <div class="d-flex justify-content-between heading7">
                 <h2 class="" data-aos="fade-left" data-aos-duration="800" style="font-size: 25px"> Port-Harcourt</h2>
               </div>
@@ -604,11 +606,11 @@
                       <p style="font-size: 13px">{{$property->address}}, {{$property->city}}</p>
                       <div class="space24"></div>
                       <!--<ul>
-                                                                                                                                                            @foreach($property->amenities as $amenity)
-                                                                                                                                                              <li><a href="#" style="font-size: 14px; margin-bottom: 5px;">{{$amenity->name}}</a></li>
-                                                                                                                                                            @endforeach
-                                                                                                                                                          </ul>
-                                                                                                                                                          <div class="space28"></div>-->
+                                                                                                                                                                                            @foreach($property->amenities as $amenity)
+                                                                                                                                                                                              <li><a href="#" style="font-size: 14px; margin-bottom: 5px;">{{$amenity->name}}</a></li>
+                                                                                                                                                                                            @endforeach
+                                                                                                                                                                                          </ul>
+                                                                                                                                                                                          <div class="space28"></div>-->
                       <div class="btn-area1">
                         <div class="single-btn">
                           <a href="#">₦ {{$property->price_per_night}}</a>
@@ -790,7 +792,7 @@
           <div class="col-lg-12">
             <div class="testimonialmain-slider">
               <div class="row align-items-center">
-                <div class="col-lg-5">
+                <div class="col-lg-5 d-none">
                   <div class="images-area slider2">
                     <div class="img1 reveal image-anime">
                       <img src="assets/img/all-images/testimonial/testimonial-img1.png" alt="">
@@ -806,7 +808,7 @@
                     </div>
                   </div>
                 </div>
-                <div class="col-lg-7">
+                <div class="col-lg-12">
                   <div class="testimonial-slider-area slider1">
                     <div class="testimonial-box">
                       <img src="assets/img/icons/quoto-icon3.svg" alt="">
@@ -818,7 +820,7 @@
                       <div class="space32"></div>
                       <div class="auhtor-area">
                         <div class="img1">
-                          <img src="assets/img/all-images/testimonial/testimonial2.png" alt="">
+                          <img src="https://ui-avatars.com/api/?name=K&background=875233&color=fff" alt="">
                         </div>
                         <div class="text">
                           <a href="#">Kunle</a>
@@ -837,7 +839,7 @@
                       <div class="space32"></div>
                       <div class="auhtor-area">
                         <div class="img1">
-                          <img src="assets/img/all-images/testimonial/testimonial-couple.png" alt="">
+                          <img src="https://ui-avatars.com/api/?name=BS&background=875233&color=fff" alt="">
                         </div>
                         <div class="text">
                           <a href="#"> Mr & Mrs Buchi-Samuels</a>
@@ -857,7 +859,7 @@
                       <div class="space32"></div>
                       <div class="auhtor-area">
                         <div class="img1">
-                          <img src="assets/img/all-images/testimonial/testimonial-img2.png" alt="">
+                          <img src="https://ui-avatars.com/api/?name=G&background=875233&color=fff" alt="">
                         </div>
                         <div class="text">
                           <a href="#">Grace Olawale</a>
@@ -878,7 +880,7 @@
                       <div class="space32"></div>
                       <div class="auhtor-area">
                         <div class="img1">
-                          <img src="assets/img/all-images/testimonial/testimonial-img5.png" alt="">
+                          <img src="https://ui-avatars.com/api/?name=C&background=875233&color=fff" alt="">
                         </div>
                         <div class="text">
                           <a href="#">Chidi Mbachu</a>

@@ -16,12 +16,13 @@ class Chef extends Model
         'phone_number',
         'availability_status',
         'image',
+        'max_guests',
     ];
 
     public function chefServices()
     {
         return $this->belongsToMany(ChefService::class, 'chef_service_types')
-            ->withPivot('price','id')
+            ->withPivot('price', 'id')
             ->withTimestamps();
     }
 }

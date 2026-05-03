@@ -8,10 +8,10 @@
         <p class="card-text">{{ $property->address }}, {{ $property->city }}</p>
         <div class="card-text buttons d-flex gap-2">
             <a href="javascript:void(0);"
-                class="icons bookmark-btn {{ (isset($isBookmarked) && $isBookmarked) || (auth()->check() && auth()->user()->bookmarkedProperties()->where('property_id', $property->id)->exists()) ? 'bookmarked text-warning' : '' }}"
+                class="icons bookmark-btn {{ (isset($isBookmarked) && $isBookmarked) || (isset($bookmarked_ids) && in_array($property->id, $bookmarked_ids)) ? 'bookmarked text-warning' : '' }}"
                 onclick="toggleBookmark('{{ $property->id }}', this)" title="Bookmark Property">
                 <i
-                    class="bi {{ (isset($isBookmarked) && $isBookmarked) || (auth()->check() && auth()->user()->bookmarkedProperties()->where('property_id', $property->id)->exists()) ? 'bi-bookmark-fill' : 'bi-bookmark' }}"></i>
+                    class="bi {{ (isset($isBookmarked) && $isBookmarked) || (isset($bookmarked_ids) && in_array($property->id, $bookmarked_ids)) ? 'bi-bookmark-fill' : 'bi-bookmark' }}"></i>
             </a>
 
             @if(auth()->check() && auth()->user()->hasRole('Admin'))

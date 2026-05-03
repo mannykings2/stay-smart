@@ -50,11 +50,11 @@
                                                 </tr>
                                                 <tr>
                                                     <th>Booking Name</th>
-                                                    <td>{{ ($booking->user->first_name ?? 'Guest') . ' ' . ($booking->user->last_name ?? '') }}</td>
+                                                    <td>{{ (optional($booking->user)->first_name ?? 'Guest') . ' ' . (optional($booking->user)->last_name ?? '') }}</td>
                                                 </tr>
                                                 <tr>
                                                     <th>Email</th>
-                                                    <td>{{$booking->user->email}}</td>
+                                                    <td>{{ optional($booking->user)->email }}</td>
                                                 </tr>
                                                 <tr>
                                                     <th>Phone</th>

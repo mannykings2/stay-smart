@@ -25,6 +25,7 @@ class ProfileController extends Controller
         $rules = [
             'phone_number' => 'nullable|string|max:255',
             'gender' => 'nullable|string|in:Male,Female,Other',
+            'payout_frequency' => 'nullable|string|in:Monthly,Quarterly,Yearly,On Demand',
         ];
 
         if (!$user->first_name) {
@@ -45,6 +46,11 @@ class ProfileController extends Controller
         }
         $user->phone_number = $request->phone_number;
         $user->gender = $request->gender;
+        if ($request->has('payout_frequency')) {
+            $user->getOrCreateRevenueConfig()->update([
+                'payout_frequency' => $request->payout_frequency,
+            ]);
+        }
         $user->save();
 
         return redirect()->back()->with('success', 'Profile updated successfully.');
@@ -56,16 +62,11 @@ class ProfileController extends Controller
     public function updatePassword(Request $request)
     {
         $request->validate([
-            'current_password' => 'required',
+            'current_password' => 'required|current_password',
             'new_password' => 'required|min:8|confirmed',
         ]);
 
         $user = Auth::user();
-
-        if (!Hash::check($request->current_password, $user->password)) {
-            return redirect()->back()->withErrors(['current_password' => 'Current password is incorrect.']);
-        }
-
         $user->password = Hash::make($request->new_password);
         $user->save();
 

@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use App\Models\Property;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -26,6 +28,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'phone_number',
         'password',
         'email_verified_at',
+        'id_verified_at',
         'is_guest',
         'role',
         'google_id',
@@ -34,7 +37,8 @@ class User extends Authenticatable implements MustVerifyEmail
 
     /**
      * The attributes that should be hidden for serializati
-     * ... (truncated for brevity in diff, keep existing) ...
+     *
+     * @var array<int, string>
      */
     protected $hidden = [
         'password',
@@ -43,10 +47,12 @@ class User extends Authenticatable implements MustVerifyEmail
 
     /**
      * The attributes that should be cast.
-     * ...
+     *
+     * @var array<string, string>
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'id_verified_at' => 'datetime',
     ];
 
     public function managedCleaners()
@@ -57,6 +63,17 @@ class User extends Authenticatable implements MustVerifyEmail
     public function managingAdmins()
     {
         return $this->belongsToMany(User::class, 'admin_cleaner', 'cleaner_id', 'admin_id')->withTimestamps();
+    }
+
+    public function assignedProperties()
+    {
+        return $this->belongsToMany(Property::class, 'property_user')
+            ->withPivot('role_type')->withTimestamps();
+    }
+
+    public function ownedProperties()
+    {
+        return $this->hasMany(Property::class);
     }
 
     public function bookings()
@@ -83,6 +100,52 @@ class User extends Authenticatable implements MustVerifyEmail
     public function supportTickets()
     {
         return $this->hasMany(SupportTicket::class);
+    }
+
+    public function revenueSplits()
+    {
+        return $this->hasMany(RevenueSplit::class, 'admin_id');
+    }
+
+    public function revenuePayouts()
+    {
+        return $this->hasMany(RevenuePayout::class, 'admin_id');
+    }
+
+    public function revenueConfig()
+    {
+        return $this->hasOne(AdminRevenueConfig::class);
+    }
+
+    public function bankAccount()
+    {
+        return $this->hasOne(AdminBankAccount::class);
+    }
+
+    public function idVerifications()
+    {
+        return $this->hasMany(IdVerification::class);
+    }
+
+    public function latestIdVerification()
+    {
+        return $this->hasOne(IdVerification::class)->latestOfMany();
+    }
+
+    /**
+     * Check if the user has a verified ID.
+     */
+    public function isIdVerified()
+    {
+        return !is_null($this->id_verified_at);
+    }
+
+    /**
+     * Get or create the revenue config for this user.
+     */
+    public function getOrCreateRevenueConfig()
+    {
+        return $this->revenueConfig ?? $this->revenueConfig()->create(['user_id' => $this->id]);
     }
 
     /**

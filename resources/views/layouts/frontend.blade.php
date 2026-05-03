@@ -29,6 +29,7 @@
 
 <body class="homepage10-body">
 
+    @include('partials.frontend.pending_booking_alert')
     @include('partials.frontend.header')
 
     @yield('content')

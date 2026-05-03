@@ -18,12 +18,15 @@ class Driver extends Model
         'license_number',
         'availability_status',
         'image',
+        'max_occupants',
+        'hourly_rate',
+        'extra_person_charge'
     ];
 
     public function driverServices()
     {
         return $this->belongsToMany(DriverService::class, 'driver_service_types')
-            ->withPivot('price','id')
+            ->withPivot('price', 'id')
             ->withTimestamps();
     }
 

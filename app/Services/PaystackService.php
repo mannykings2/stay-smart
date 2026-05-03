@@ -68,4 +68,52 @@ class PaystackService
             return ['status' => false, 'message' => 'An error occurred during payment verification.'];
         }
     }
+    /**
+     * Get list of Nigerian banks from Paystack.
+     * Cached for 24 hours to avoid repeated API hits.
+     */
+    public function getBanks(): array
+    {
+        return \Illuminate\Support\Facades\Cache::remember('paystack_banks', 86400, function () {
+            try {
+                $response = Http::withToken($this->secretKey)
+                    ->withoutVerifying()
+                    ->get($this->baseUrl . '/bank', ['country' => 'nigeria', 'perPage' => 200]);
+
+                if ($response->successful()) {
+                    return $response->json('data') ?? [];
+                }
+            } catch (\Exception $e) {
+                Log::error('Paystack getBanks failed', ['message' => $e->getMessage()]);
+            }
+            return [];
+        });
+    }
+
+    /**
+     * Resolve an account name from a bank code and account number.
+     */
+    public function resolveAccountName(string $accountNumber, string $bankCode): array
+    {
+        try {
+            $response = Http::withToken($this->secretKey)
+                ->withoutVerifying()
+                ->get($this->baseUrl . '/bank/resolve', [
+                    'account_number' => $accountNumber,
+                    'bank_code' => $bankCode,
+                ]);
+
+            if ($response->successful()) {
+                return [
+                    'success' => true,
+                    'account_name' => $response->json('data.account_name'),
+                ];
+            }
+
+            return ['success' => false, 'message' => $response->json('message') ?? 'Could not resolve account.'];
+        } catch (\Exception $e) {
+            Log::error('Paystack resolveAccountName failed', ['message' => $e->getMessage()]);
+            return ['success' => false, 'message' => 'An error occurred.'];
+        }
+    }
 }

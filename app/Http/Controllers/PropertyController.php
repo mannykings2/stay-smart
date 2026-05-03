@@ -55,8 +55,14 @@ class PropertyController extends Controller
         if (auth()->user()->hasRole('Admin')) {
             $query->where('user_id', auth()->id());
         } elseif (auth()->user()->hasRole('Cleaner')) {
-            $adminIds = auth()->user()->managingAdmins()->pluck('users.id');
-            $query->whereIn('user_id', $adminIds);
+            $user = auth()->user();
+            $adminIds = $user->managingAdmins()->pluck('users.id');
+            $assignedIds = $user->assignedProperties()->where('role_type', 'cleaner')->pluck('properties.id');
+            
+            $query->where(function($q) use ($adminIds, $assignedIds) {
+                $q->whereIn('user_id', $adminIds)
+                  ->orWhereIn('id', $assignedIds);
+            });
         }
 
         // Filter Logic
@@ -98,24 +104,34 @@ class PropertyController extends Controller
         $cities = Property::distinct()->pluck('city');
 
         $bookmarked_properties = [];
+        $bookmarked_ids = [];
         if (auth()->check()) {
             $bookmarked_properties = auth()->user()->bookmarkedProperties()
                 ->whereIn('status', ['Available', 'Booked', 'Under Maintenance'])
                 ->get();
+            $bookmarked_ids = $bookmarked_properties->pluck('id')->toArray();
         }
 
-        return view('properties.index', compact('trending_properties', 'cities', 'bookmarked_properties'));
+        return view('properties.index', compact('trending_properties', 'cities', 'bookmarked_properties', 'bookmarked_ids'));
     }
 
     public function allProperties()
     {
         if (auth()->user()->hasRole('Admin')) {
-            $properties = Property::where('user_id', auth()->id())->latest()->get();
+            $properties = Property::with('images')->where('user_id', auth()->id())->latest()->get();
         } elseif (auth()->user()->hasRole('Cleaner')) {
-            $adminIds = auth()->user()->managingAdmins()->pluck('users.id');
-            $properties = Property::whereIn('user_id', $adminIds)->latest()->get();
+            $user = auth()->user();
+            $adminIds = $user->managingAdmins()->pluck('users.id');
+            $assignedIds = $user->assignedProperties()->where('role_type', 'cleaner')->pluck('properties.id');
+            
+            $properties = Property::with('images')
+                ->where(function($q) use ($adminIds, $assignedIds) {
+                    $q->whereIn('user_id', $adminIds)
+                      ->orWhereIn('id', $assignedIds);
+                })
+                ->latest()->get();
         } else {
-            $properties = Property::latest()->get();
+            $properties = Property::with('images')->latest()->get();
         }
         $amenities = Amenity::all();
         return view('properties.all', compact('properties', 'amenities'));
@@ -152,8 +168,13 @@ class PropertyController extends Controller
 
         // Authorization Check for Cleaner
         if (auth()->check() && auth()->user()->hasRole('Cleaner')) {
-            $adminIds = auth()->user()->managingAdmins()->pluck('users.id');
-            if (!$adminIds->contains($property->user_id)) {
+            $user = auth()->user();
+            $adminIds = $user->managingAdmins()->pluck('users.id');
+            $assignedIds = $user->assignedProperties()->where('role_type', 'cleaner')->pluck('properties.id');
+            
+            $hasAccess = $adminIds->contains($property->user_id) || $assignedIds->contains($property->id);
+            
+            if (!$hasAccess) {
                 return back()->with('error', 'Booking not found');
             }
         }

@@ -78,11 +78,26 @@
             }
 
             function submitDeleteAmenity(url) {
-                if (confirm('Are you sure you want to delete this amenity? It will be removed from all associated properties.')) {
-                    const form = document.getElementById('deleteAmenityForm');
-                    form.action = url;
-                    form.submit();
-                }
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: 'Are you sure you want to delete this amenity? It will be removed from all associated properties.',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Yes, delete it!',
+                    cancelButtonText: 'Cancel',
+                    buttonsStyling: false,
+                    customClass: {
+                        confirmButton: 'btn btn-primary px-4 me-2',
+                        cancelButton: 'btn btn-danger px-4',
+                        popup: 'rounded-4 border-0 shadow'
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        const form = document.getElementById('deleteAmenityForm');
+                        form.action = url;
+                        form.submit();
+                    }
+                });
             }
         </script>
     </main>

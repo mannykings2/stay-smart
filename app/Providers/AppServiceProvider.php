@@ -5,7 +5,7 @@ namespace App\Providers;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Schema;
-
+use Illuminate\Database\Eloquent\Model;
 class AppServiceProvider extends ServiceProvider
 {
     /**
@@ -26,6 +26,9 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Schema::defaultStringLength(191);
+
+        // Detect N+1 queries in non-production environments
+        Model::preventLazyLoading(!app()->isProduction());
 
         // Fix for SSL issues locally (XAMPP/Windows)
         if (app()->environment('local')) {

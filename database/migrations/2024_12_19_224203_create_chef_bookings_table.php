@@ -17,7 +17,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->foreignId('chef_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('chef_service_type_id')->constrained()->cascadeOnDelete();
+            // Added later after chef_service_types exists
             $table->foreignId('booking_id')->nullable()->constrained()->cascadeOnDelete();
             $table->string('reference')->nullable();
             $table->date('service_date');

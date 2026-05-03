@@ -29,22 +29,51 @@ class DriverServiceController extends Controller
 
         DriverService::create($validated);
 
-         return redirect()->back()->with('success', 'Service created successfully!');
+        return redirect()->back()->with('success', 'Service created successfully!');
     }
 
     public function assignService(Request $request)
     {
         $request->validate([
             'driver_id' => 'required|exists:drivers,id',
-            'driver_service_id' => 'required|exists:driver_services,id',
-            'price' => 'required|numeric|min:0',
+            'services' => 'required|array',
         ]);
 
         $driver = Driver::find($request->driver_id);
-        $driver->driverServices()->syncWithoutDetaching([
-            $request->driver_service_id => ['price' => $request->price]
-        ]);
+        $syncData = [];
+
+        foreach ($request->services as $serviceId => $data) {
+            if (isset($data['selected'])) {
+                $syncData[$serviceId] = [
+                    'price' => 0,
+                    'base_price' => 0,
+                    'per_unit_price' => 0
+                ];
+            }
+        }
+
+        if (!empty($syncData)) {
+            $driver->driverServices()->syncWithoutDetaching($syncData);
+        }
 
         return response()->json(['success' => true]);
+    }
+
+    public function update(Request $request, DriverService $service)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255|unique:driver_services,name,' . $service->id,
+        ]);
+
+        $service->update($validated);
+
+        return redirect()->back()->with('success', 'Service updated successfully!');
+    }
+
+    public function destroy(DriverService $service)
+    {
+        $service->delete();
+
+        return redirect()->back()->with('success', 'Service deleted successfully!');
     }
 }

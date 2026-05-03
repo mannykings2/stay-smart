@@ -286,12 +286,12 @@
                   <div class="col-md-4 mb-3">
                     <label for="check_in_date" class="form-label text-dark"><strong>Check-in Date</strong></label>
                     <input type="date" class="form-control" id="check_in_date" name="check_in_date"
-                           value="{{ old('check_in_date', request('check_in')) }}" required>
+                           value="{{ old('check_in_date', request('check_in')) }}" min="{{ date('Y-m-d') }}" required>
                   </div>
                   <div class="col-md-4 mb-3">
                     <label for="check_out_date" class="form-label text-dark"><strong>Check-out Date</strong></label>
                     <input type="date" class="form-control" id="check_out_date" name="check_out_date"
-                           value="{{ old('check_out_date', request('check_out')) }}" required>
+                           value="{{ old('check_out_date', request('check_out')) }}" min="{{ date('Y-m-d') }}" required>
                   </div>
                   <div class="col-md-4 mb-3">
                     <label for="number_of_guests" class="form-label text-dark"><strong>Number of Guests</strong></label>
@@ -362,7 +362,7 @@
                 <div class="content">
                   <ul>
                     @foreach($property->amenities as $amenity)
-                      <li><a href="#" style="font-size: 14px; margin-bottom: 5px;">{{$amenity->name}}</a></li>
+                      <li><a style="font-size: 14px; margin-bottom: 5px;">{{$amenity->name}}</a></li>
                     @endforeach
                   </ul>
                 </div>
@@ -372,7 +372,7 @@
             <div class="apartment-contactbox">
               <h3>Book Now</h3>
               <div class="space16"></div>
-              <form class="px-md-5 pt-3" action="{{route('book')}}" method="POST">
+              <form id="bookNowForm" class="px-md-5 pt-3" action="{{route('book')}}" method="POST">
                 @csrf
                 @if (session('error'))
                   <div class="alert alert-danger">
@@ -404,7 +404,7 @@
                   <div class="col-lg-6">
                     <div class="input-area">
                       <input type="email" name="email" placeholder="Email" 
-                        value="{{ old('email', auth()->check() ? auth()->user()->email : '') }}" 
+                        value="{{ old('email', auth()->check() ? optional(auth()->user())->email : '') }}" 
                         {{ auth()->check() ? 'readonly' : '' }} required>
                     </div>
                   </div>
@@ -418,8 +418,7 @@
                   @if(!auth()->check())
                   <div class="col-lg-12">
                     <div class="space20"></div>
-                    <div class="input-area d-flex align-items-center">
-                      <input type="checkbox" name="create_account" id="create_account" value="1"
+                        <input type="checkbox" id="create_account" name="create_account" value="1" {{ old('create_account') ? 'checked' : '' }}
                         style="width: 16px; height: 16px; border: 1px solid #ccc; margin-right: 10px; appearance: checkbox; -webkit-appearance: checkbox;">
                       <label for="create_account" class="m-0" style="font-size: 14px; cursor: pointer;">
                         Create an account for me and update my profile with the above details
@@ -442,8 +441,7 @@
                   @else
                   <div class="col-lg-12">
                     <div class="space20"></div>
-                    <div class="input-area d-flex align-items-center">
-                      <input type="checkbox" name="update_profile" id="update_profile" value="1"
+                        <input type="checkbox" id="update_profile" name="update_profile" value="1" {{ old('update_profile') ? 'checked' : '' }}
                         style="width: 16px; height: 16px; border: 1px solid #ccc; margin-right: 10px; appearance: checkbox; -webkit-appearance: checkbox;">
                       <label for="update_profile" class="m-0" style="font-size: 14px; cursor: pointer;">
                         Update my profile with the above details
@@ -483,13 +481,13 @@
     })
 
     // Handle form submission to copy editable field values
-    $('form').on('submit', function(e) {
+    $('#bookNowForm').on('submit', function() {
       // Copy values from editable fields to hidden inputs
-      $('input[name="check_in_date"]').val($('#check_in_date').val());
-      $('input[name="check_out_date"]').val($('#check_out_date').val());
-      $('input[name="check_in_time"]').val($('#check_in_time').val());
-      $('input[name="check_out_time"]').val($('#check_out_time').val());
-      $('input[name="number_of_guests"]').val($('#number_of_guests').val());
+      $(this).find('input[name="check_in_date"]').val($('#check_in_date').val());
+      $(this).find('input[name="check_out_date"]').val($('#check_out_date').val());
+      $(this).find('input[name="check_in_time"]').val($('#check_in_time').val());
+      $(this).find('input[name="check_out_time"]').val($('#check_out_time').val());
+      $(this).find('input[name="number_of_guests"]').val($('#number_of_guests').val());
     });
 
     // Toggle password fields when create account checkbox is checked

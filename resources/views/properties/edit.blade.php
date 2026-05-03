@@ -171,11 +171,26 @@
                         }
 
                         function submitDeleteImage(url) {
-                            if (confirm('Are you sure you want to delete this image?')) {
-                                const form = document.getElementById('deleteImageForm');
-                                form.action = url;
-                                form.submit();
-                            }
+                            Swal.fire({
+                                title: 'Delete Image?',
+                                text: 'Are you sure you want to delete this image? This action cannot be undone.',
+                                icon: 'warning',
+                                showCancelButton: true,
+                                confirmButtonText: 'Yes, delete it!',
+                                cancelButtonText: 'Cancel',
+                                buttonsStyling: false,
+                                customClass: {
+                                    confirmButton: 'btn btn-primary px-4 me-2',
+                                    cancelButton: 'btn btn-danger px-4',
+                                    popup: 'rounded-4 border-0 shadow'
+                                }
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    const form = document.getElementById('deleteImageForm');
+                                    form.action = url;
+                                    form.submit();
+                                }
+                            });
                         }
                         </script>
 

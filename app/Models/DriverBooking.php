@@ -22,7 +22,14 @@ class DriverBooking extends Model
         'ride_time',
         'pickup_location',
         'dropoff_location',
-        'status'
+        'status',
+        'luggage_count',
+        'special_instructions',
+        'ride_duration_mins',
+        'ride_distance_km',
+        'booking_base_price',
+        'booking_per_unit_price',
+        'occupants'
     ];
 
     public function driver()
@@ -43,5 +50,10 @@ class DriverBooking extends Model
     public function booking()
     {
         return $this->belongsTo(Booking::class);
+    }
+
+    public function payment()
+    {
+        return $this->hasOne(Payment::class, 'ride_booking_id')->latestOfMany();
     }
 }

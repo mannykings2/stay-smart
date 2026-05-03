@@ -16,27 +16,51 @@ class BookingsController extends Controller
 {
     public function book(Property $property)
     {
+        $property->load('amenities');
         return view('bookings.book', compact('property'));
     }
 
     public function mine()
     {
-        if (auth()->user()->hasRole('Admin')) {
-            $bookings = Booking::whereHas('property', function ($q) {
+        $activeBookings = null;
+        $completedBookings = null;
+
+        // Add pagination to bookings lists. Use distinct page query names to avoid conflicts.
+        if (auth()->user()->hasRole('Super Admin')) {
+            $bookings = Booking::with(['property', 'user', 'digitalCheckIns'])->latest()->paginate(15, ['*'], 'book_page');
+
+            $chefBookings = ChefBooking::with(['user', 'chef'])->latest()->paginate(10, ['*'], 'chef_page');
+            $driverBookings = DriverBooking::with(['user', 'driver'])->latest()->paginate(10, ['*'], 'driver_page');
+        } elseif (auth()->user()->hasRole('Admin')) {
+            $bookings = Booking::with(['property', 'user', 'digitalCheckIns'])->whereHas('property', function ($q) {
                 $q->where('user_id', auth()->id());
-            })->latest()->get();
+            })->latest()->paginate(15, ['*'], 'book_page');
 
             // Admins should not see chef/driver bookings
             $chefBookings = collect([]);
             $driverBookings = collect([]);
         } else {
-            $bookings = Booking::where('user_id', auth()->id())->latest()->get();
+            // Regular user: separate paginated lists for active and completed bookings (cards view)
+            $activeBookings = Booking::with(['property', 'digitalCheckIns'])
+                ->where('user_id', auth()->id())
+                ->where('status', '!=', 'Completed')
+                ->latest()
+                ->paginate(6, ['*'], 'book_active_page');
 
-            $chefBookings = ChefBooking::where('user_id', auth()->id())->latest()->get();
-            $driverBookings = DriverBooking::where('user_id', auth()->id())->latest()->get();
+            $completedBookings = Booking::with(['property', 'digitalCheckIns'])
+                ->where('user_id', auth()->id())
+                ->where('status', 'Completed')
+                ->latest()
+                ->paginate(6, ['*'], 'book_completed_page');
+
+            $chefBookings = ChefBooking::with(['chef'])->where('user_id', auth()->id())->latest()->paginate(6, ['*'], 'chef_page');
+            $driverBookings = DriverBooking::with(['driver'])->where('user_id', auth()->id())->latest()->paginate(6, ['*'], 'driver_page');
+
+            // Backwards-compat: some views expect $bookings variable. Set to null when using separate paginators.
+            $bookings = null;
         }
 
-        return view('bookings.mine', compact('bookings', 'chefBookings', 'driverBookings'));
+        return view('bookings.mine', compact('bookings', 'activeBookings', 'completedBookings', 'chefBookings', 'driverBookings'));
     }
 
     public function store(Request $request)
@@ -44,7 +68,7 @@ class BookingsController extends Controller
         $rules = [
             'property_id' => 'required|integer',
             'number_of_guests' => 'required|integer',
-            'check_in_date' => 'required|date',
+            'check_in_date' => 'required|date|after_or_equal:today',
             'check_out_date' => 'required|date|after:check_in_date',
         ];
 
@@ -110,14 +134,15 @@ class BookingsController extends Controller
         $check_in_date = $request->check_in_date;
         $check_out_date = $request->check_out_date;
 
-        $isBooked = Booking::where('property_id', $property->id)
+        // Check if property is already booked (Confirmed status only)
+        $existingBooking = Booking::where('property_id', $property->id)
+            ->whereDate('check_in_date', '<', $check_out_date) // Exclusive check
+            ->whereDate('check_out_date', '>', $check_in_date)
             ->where('status', 'Confirmed')
-            ->whereDate('check_in_date', '<=', $check_out_date)
-            ->whereDate('check_out_date', '>=', $check_in_date)
-            ->exists();
+            ->first();
 
-        if ($isBooked) {
-            return back()->with('error', 'Sorry, this property is already booked for the selected dates. Please choose different dates or browse our other available properties.');
+        if ($existingBooking) {
+            return back()->with('error', 'Sorry, this property is already booked for the selected dates. Please choose different dates.');
         }
 
         $available_status = ['Available', 'Booked'];
@@ -150,15 +175,39 @@ class BookingsController extends Controller
 
     public function view($reference)
     {
-        // load related models to ensure view has up-to-date payment/user/property data
-        $booking = Booking::with(['payment', 'user', 'property'])->where('reference', $reference)->first();
+        // 1. Check Property Booking
+        $booking = Booking::with(['payment', 'user', 'property'])
+            ->where('reference', $reference)
+            ->first();
 
-        if (!$booking) {
-            return back()->with('error', 'Invalid booking reference');
+        if ($booking) {
+            $type = 'property';
+            return view('bookings.view', compact('booking', 'type'));
         }
 
-        return view('bookings.view', compact('booking'));
+        // 2. Check Chef Booking
+        $booking = ChefBooking::with(['user', 'chef', 'chefServiceType.chefService'])
+            ->where('reference', $reference)
+            ->first();
+
+        if ($booking) {
+            $type = 'chef';
+            return view('bookings.view', compact('booking', 'type'));
+        }
+
+        // 3. Check Driver Booking
+        $booking = DriverBooking::with(['user', 'driver', 'driverServiceType.driverService'])
+            ->where('reference', $reference)
+            ->first();
+
+        if ($booking) {
+            $type = 'driver';
+            return view('bookings.view', compact('booking', 'type'));
+        }
+
+        return back()->with('error', 'Invalid booking reference');
     }
+
 
     private function calcTotalBookingPrice($check_in, $check_out, $property)
     {
@@ -182,12 +231,12 @@ class BookingsController extends Controller
     {
         $request->validate([
             'property_id' => 'required|exists:properties,id',
-            'check_in_date' => 'required|date',
+            'check_in_date' => 'required|date|after_or_equal:today',
             'check_out_date' => 'required|date|after:check_in_date',
         ]);
 
         $isBooked = Booking::where('property_id', $request->property_id)
-            ->where('status', '!=', 'Cancelled')
+            ->where('status', 'Confirmed')
             ->whereDate('check_in_date', '<', $request->check_out_date)
             ->whereDate('check_out_date', '>', $request->check_in_date)
             ->exists();
@@ -203,5 +252,28 @@ class BookingsController extends Controller
             'available' => true,
             'message' => 'Apartment is available'
         ]);
+    }
+
+    /**
+     * Admin Feature: Bulk cancel stale pending bookings
+     */
+    public function bulkCancelPending(Request $request)
+    {
+        $hours = $request->input('hours', 24); // Default to 24 hours if not specified
+        $cutoff = Carbon::now()->subHours($hours);
+
+        $count = Booking::where('status', 'Pending')
+            ->where('created_at', '<', $cutoff)
+            ->count();
+
+        if ($count > 0) {
+            Booking::where('status', 'Pending')
+                ->where('created_at', '<', $cutoff)
+                ->update(['status' => 'Cancelled']);
+
+            return back()->with('success', "Successfully cancelled {$count} stale pending bookings.");
+        }
+
+        return back()->with('info', 'No stale pending bookings found to cancel.');
     }
 }

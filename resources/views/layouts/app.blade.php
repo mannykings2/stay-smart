@@ -38,6 +38,7 @@
     <link href="{{asset('dashboard/assets/css/light-theme.css')}}" rel="stylesheet" />
     <link href="{{asset('dashboard/assets/css/semi-dark.css')}}" rel="stylesheet" />
     <link href="{{asset('dashboard/assets/css/header-colors.css')}}" rel="stylesheet" />
+    <link rel="stylesheet" href="{{ asset('assets/css/plugins/sweetalert2.css') }}" />
 
     <title>Stay Smart Apartments | Dashboard</title>
 
@@ -93,6 +94,7 @@
 
     <!--start wrapper-->
     <div class="wrapper">
+        @include('partials.frontend.pending_booking_alert')
         @include('partials.header')
 
         @auth

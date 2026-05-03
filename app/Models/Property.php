@@ -19,7 +19,9 @@ class Property extends Model
         'user_id',
         'status',
         'max_guests',
-        'image_path'
+        'image_path',
+        'commission_rate',
+        'commission_type',
     ];
 
     public function user()
@@ -52,6 +54,12 @@ class Property extends Model
     {
         return $this->belongsToMany(User::class, 'property_bookmarks', 'property_id', 'user_id')
             ->withTimestamps();
+    }
+
+    public function assignedUsers()
+    {
+        return $this->belongsToMany(User::class, 'property_user')
+            ->withPivot('role_type')->withTimestamps();
     }
 
     public function getFullLocationAttribute()

@@ -39,12 +39,12 @@
                     <div class="col-md-2">
                         <label class="form-label small">Check-in</label>
                         <input type="date" name="check_in_date" class="form-control form-control-sm"
-                            value="{{ request('check_in_date') }}">
+                            value="{{ request('check_in_date') }}" min="{{ date('Y-m-d') }}">
                     </div>
                     <div class="col-md-2">
                         <label class="form-label small">Check-out</label>
                         <input type="date" name="check_out_date" class="form-control form-control-sm"
-                            value="{{ request('check_out_date') }}">
+                            value="{{ request('check_out_date') }}" min="{{ date('Y-m-d') }}">
                     </div>
                     <div class="col-md-1 d-flex align-items-end gap-2">
                         <button type="submit" class="btn btn-sm btn-primary w-100">Apply</button>

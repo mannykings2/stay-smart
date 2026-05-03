@@ -27,7 +27,7 @@
                             </div>
                             <div class="main-menu">
                                 <ul>
-                                    <li class="nav-item"><a href="{{ url('/') }}#apartment"
+                                    <li class="nav-item"><a href="{{ url('properties') }}"
                                             class="nav-link"><span>Apartments</span></a></li>
                                     <li class="nav-item dropdown">
                                         <a href="#" class="nav-link dropdown-toggle" id="partnerDropdown" role="button"
@@ -53,8 +53,9 @@
                                     <a href="{{ route('auth.google') }}"
                                         class="btn btn-sm btn-outline-dark d-flex align-items-center gap-2"
                                         style="border-radius: 20px; padding: 5px 15px; font-weight: 500; border: 1px solid #ddd;">
-                                        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-                                            alt="Google" width="18">
+                                        <!--<img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+                                                            alt="Google" width="18">-->
+                                        <img src="assets/img/all-images/about/google.svg" alt="Google" width="18">
                                         Sign In With Google
                                     </a>
                                 @else
@@ -181,8 +182,10 @@
                             <a href="{{ route('auth.google') }}"
                                 class="header-btn11 w-100 justify-content-center d-flex align-items-center gap-2"
                                 style="margin-top: 20px;">
-                                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google"
-                                    width="18" style="filter: brightness(0) invert(1);">
+                                <!--<img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google"
+                                            width="18" style="filter: brightness(0) invert(1);">-->
+                                <img src="assets/img/all-images/about/google.svg" alt="Google" width="18"
+                                    style="filter: brightness(0) invert(1);">
                                 Sign In with Google
                             </a>
                         @endguest

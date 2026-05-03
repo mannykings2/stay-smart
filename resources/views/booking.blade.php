@@ -344,6 +344,22 @@
             </div>
             <div class="space32"></div>
             <div class="apartment-contactbox">
+              @if(session('success'))
+                <div
+                  class="alert alert-success alert-dismissible fade show rounded-4 mb-4 border-0 shadow-sm p-4 text-start"
+                  role="alert" style="background-color: #f0fdf4; color: #166534;">
+                  <div class="d-flex align-items-center gap-3">
+                    <div class="flex-shrink-0">
+                      <i class="fa-solid fa-circle-check fs-3" style="color: #22c55e;"></i>
+                    </div>
+                    <div>
+                      <h5 class="alert-heading mb-1 fw-bold" style="color: #166534;">Success!</h5>
+                      <p class="mb-0">{{ session('success') }}</p>
+                    </div>
+                  </div>
+                  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+              @endif
 
               <div class="row justify-content-center mt-4">
                 <div class="col-12">
@@ -361,11 +377,11 @@
                     </tr>
                     <tr>
                       <th>Booking Name</th>
-                      <td>{{ ($booking->user->first_name ?? 'Guest') . ' ' . ($booking->user->last_name ?? '') }}</td>
+                      <td>{{ (optional($booking->user)->first_name ?? 'Guest') . ' ' . (optional($booking->user)->last_name ?? '') }}</td>
                     </tr>
                     <tr>
                       <th>Email</th>
-                      <td>{{$booking->user->email}}</td>
+                      <td>{{ optional($booking->user)->email }}</td>
                     </tr>
                     <tr>
                       <th>Phone</th>
@@ -393,32 +409,56 @@
                     @endif
                   </table>
 
+                  @if($booking->status == 'Confirmed')
+                    <div class="mt-4 d-flex flex-column gap-2" id="receipt-actions">
+                      <div class="d-flex gap-2">
+                        <button class="btn w-100 rounded-pill py-2 d-flex align-items-center justify-content-center gap-2"
+                          id="downloadPngBtn"
+                          style="background-color: #f8f0eb; color: #875233; border: 1px solid #875233; font-weight: 600;">
+                          <i class="fa-solid fa-image"></i> Download PNG
+                        </button>
+                        <a href="{{ route('payment.receipt', $booking->payment->trx_ref ?? '') }}"
+                          class="btn w-100 rounded-pill py-2 d-flex align-items-center justify-content-center gap-2"
+                          style="background-color: #875233; color: white; font-weight: 600;">
+                          <i class="fa-solid fa-file-pdf"></i> Download PDF
+                        </a>
+                      </div>
+                      <small class="text-muted text-center" style="font-size: 0.75rem;">Keep a copy of your receipt for
+                        check-in.</small>
+                    </div>
+                  @endif
+
+
                   @if(!auth()->check())
                     <div class="alert alert-info mt-4 text-center"
                       style="background-color: #e7f3ff; border-color: #b3d9ff;">
                       <i class="fa-solid fa-circle-info me-2"></i>
                       <strong>Want to track your booking?</strong>
-                      <a href="{{ route('login') }}" class="text-primary fw-bold text-decoration-underline">Log in to your
+                      <a href="{{ route('login') }}" class="text-primary fw-bold text-decoration-underline">Log in to
+                        your
                         account</a>
                       to view your booking history, manage reservations, and receive updates.
                     </div>
                   @endif
                 </div>
               </div>
-              @if (in_array($booking->status, ['Cancelled', 'Confirmed']) || ($booking->payment && $booking->payment->status == 'Completed'))
-              @else
+              @if ($booking->status == 'Pending' && (!$booking->payment || $booking->payment->status != 'Completed'))
                 <div class="desc px-5 mt-4">
                   <h4 class="text-center">Pay <b>securely</b> now to confirm your booking</h4>
                 </div>
                 <div class="row">
                   <input type="hidden" name="property_id" value="{{$booking->property->id}}">
-                  <div class="col-12 mt-4 d-flex justify-content-center">
-                    <button type="button" data-id="{{$booking->id}}" data-email="{{$booking->user->email}}"
-                      data-amount="{{$booking->total_price}}" data-phone_number="{{$booking->user->phone_number}}"
-                      data-reference="{{$booking->reference}}" class="header-btn11 payNow">Confirm Booking</button>
+                  <div class="col-12 mt-4 d-flex flex-column align-items-center gap-3" style="width: 100%;">
+                    <button type="button" data-id="{{$booking->id}}" data-email="{{ optional($booking->user)->email }}"
+                      data-amount="{{$booking->total_price}}" class="btn payNow w-100 rounded-pill py-3"
+                      style="background-color: #875233; color: white; font-weight: 700; font-size: 1.1rem; box-shadow: 0 4px 15px rgba(135, 82, 51, 0.3);">
+                      Make Payment
+                    </button>
+                    <a href="#" id="cancelBookingLink" class="text-danger small fw-bold">Cancel booking</a>
                   </div>
                 </div>
               @endif
+
             </div>
           </div>
         </div>
@@ -427,10 +467,22 @@
   </div>
   <!--===== APARTMENT AREA ENDS =======-->
 
+  {{-- Hidden Receipt Area for PNG Generation --}}
+  <div id="hiddenReceiptWrapper" style="position: absolute; left: -9999px; top: -9999px;">
+    <div id="receiptCaptureArea" class="receipt-container" style="width: 680px; background: white;">
+      @if($booking->payment)
+        @include('partials.receipt_styles')
+        @php $payment = $booking->payment; @endphp
+        @include('partials.receipt_markup', ['payment' => $payment])
+      @endif
+    </div>
+  </div>
+
   @include('partials.frontend.footer')
 
   <!--===== JS SCRIPT LINK =======-->
   <script src="https://js.paystack.co/v2/inline.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="{{ asset('assets/js/plugins/sweetalert2.js') }}"></script>
 
   <script>
@@ -441,98 +493,94 @@
 
     function pay_now(response, booking_id) {
       $.ajax({
-        url: VERIFY_PAYMENT_URL,
+        url: "{{ route('verify.payment') }}",
         data: {
           reference: response.reference,
           booking_id: booking_id
         },
         type: "POST",
-        headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+        headers: {
+          'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+          'Accept': 'application/json'
+        },
         dataType: "json",
         success: function (res) {
-          // re-enable the button (if present)
           var $btn = $("button.payNow[data-id='" + booking_id + "']");
-          if (res.status === "failed") {
-            Swal.fire("Cancelled!", res.message + ". Try again", "error");
-            $btn.prop('disabled', false).text($btn.data('orig-text'));
-          } else if (res.status === "success") {
+          if (res.status === "success") {
             Swal.fire("Payment Successful!", res.message, "success").then(() => {
-              // reload the page to show the updated status and CTA
               window.location.reload();
             });
+          } else {
+            Swal.fire("Failed!", res.message || "Verification failed.", "error");
+            $btn.prop('disabled', false).text($btn.data('orig-text'));
           }
         },
-        error: function (jqXHR, textStatus, errorThrown) {
+        error: function (jqXHR) {
           var $btn = $("button.payNow[data-id='" + booking_id + "']");
           $btn.prop('disabled', false).text($btn.data('orig-text'));
-          Swal.fire("Error!", "An error occurred while finalizing payment. Please try again.", "error");
-          console.error('verify_payment ajax error', textStatus, errorThrown, jqXHR.responseText);
-        },
-      });
-    }
-
-    function pay_later() {
-      $("#registerForm").ajaxSubmit({
-        url: "vendor_register",
-        type: "POST",
-        success: function (response) {
-          if (response.status === "success") {
-            var email = $("#vendorEmail").val();
-            let handler = PaystackPop.setup({
-              key: 'pk_test_aca0b9922750d1933bcfa2823c5edde461a5fbb9',
-              email: email,
-              amount: 20000 * 100,
-              onClose: function () {
-              },
-              callback: function (response) {
-                verify_payment(response);
-              }
-            });
-            handler.openIframe();
-          } else {
-            Swal.fire("Cancelled!", response.message, "error");
+          let msg = "An error occurred while finalizing payment.";
+          if (jqXHR.responseJSON && jqXHR.responseJSON.message) {
+            msg = jqXHR.responseJSON.message;
           }
-          Swal.hideLoading();
+          Swal.fire("Error!", msg, "error");
         },
-        error: function (response) {
-          Swal.fire("Error!", response.responseJSON.message, "error");
-          Swal.hideLoading();
-        }
       });
     }
 
     $(document).on("click", ".payNow", function (e) {
       var $btn = $(this);
-      var amount = $btn.data("amount");
-      var email = $btn.data("email");
       var booking_id = $btn.data("id");
-      var phone_number = $btn.data("phone_number");
-      var baseReference = $btn.data("reference");
 
-      // append timestamp to ensure uniqueness and prevent 'Duplicate Reference' errors on retry
-      var reference = (baseReference || "BOOK") + "-" + Math.floor(Date.now() / 1000);
-
-      // disable the button and show a loading text to prevent duplicate clicks
+      // disable the button and show a loading text
       $btn.data('orig-text', $btn.text());
       $btn.prop('disabled', true).text('Processing...');
 
-      let handler = PaystackPop.setup({
-        key: PAYSTACK_PUBLIC || 'pk_test_0a2168c80b6a5054c4f98886e23943a93f93fc49',
-        email: email,
-        amount: amount * 100,
-        reference: reference,
-        "metadata": {
+      // Step 1: Initialize Payment Attempt (Pending)
+      $.ajax({
+        url: "{{ route('initialize.payment') }}",
+        type: "POST",
+        data: {
+          booking_id: booking_id,
+          redirect_to: 'frontend'
         },
-        onClose: function () {
-          // re-enable button if user closed the widget
+        headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+        success: function (initRes) {
+          if (initRes.status === 'success') {
+            let handler = PaystackPop.setup({
+              key: PAYSTACK_PUBLIC || 'pk_test_0a2168c80b6a5054c4f98886e23943a93f93fc49',
+              email: initRes.email,
+              amount: initRes.amount * 100,
+              reference: initRes.reference,
+              metadata: initRes.metadata,
+              onClose: function () {
+                // Step 2b: Record failure if closed
+                $.post("{{ route('record.failed.payment') }}", {
+                  _token: $('meta[name="csrf-token"]').attr('content'),
+                  reference: initRes.reference
+                });
+                $btn.prop('disabled', false).text($btn.data('orig-text'));
+              },
+              callback: function (response) {
+                // Step 2a: Verify successful payment
+                pay_now(response, booking_id);
+              }
+            });
+            handler.openIframe();
+          } else {
+            let errorMsg = res.message || "Could not initialize payment.";
+            Swal.fire("Error", errorMsg, "error");
+            $btn.prop('disabled', false).text($btn.data('orig-text'));
+          }
+        },
+        error: function (xhr) {
+          let errorMsg = "Server connection error.";
+          if (xhr.responseJSON && xhr.responseJSON.message) {
+            errorMsg = xhr.responseJSON.message;
+          }
+          Swal.fire("Error", errorMsg, "error");
           $btn.prop('disabled', false).text($btn.data('orig-text'));
-        },
-        callback: function (response) {
-          // call server to verify and finalize
-          pay_now(response, booking_id);
         }
       });
-      handler.openIframe();
     });
 
     $(document).on("click", ".payNows", function (e) {
@@ -540,6 +588,72 @@
       pay_now();
     });
 
+
+    // Manual Cancellation
+    $(document).on("click", "#cancelBookingLink", function (e) {
+      e.preventDefault();
+      Swal.fire({
+        title: "Cancel Booking?",
+        text: "This will immediately release the hold on this property.",
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonText: "Yes, cancel it!",
+        cancelButtonText: "Keep it",
+        buttonsStyling: false,
+        customClass: {
+            confirmButton: 'btn btn-primary px-4 me-2',
+            cancelButton: 'btn btn-danger px-4',
+            popup: 'rounded-4 border-0 shadow'
+        }
+      }).then((result) => {
+        if (result.isConfirmed) {
+          $.ajax({
+            url: "{{ route('cancel_booking') }}",
+            type: "POST",
+            data: {
+              booking_id: "{{ $booking->id }}",
+              _token: "{{ csrf_token() }}"
+            },
+            success: function (res) {
+              if (res.status === 'success') {
+                Swal.fire("Cancelled", "Your booking has been cancelled.", "success").then(() => {
+                  window.location.href = "{{ route('properties') }}";
+                });
+              } else {
+                Swal.fire("Error", res.message || "Could not cancel booking.", "error");
+              }
+            },
+            error: function () {
+              Swal.fire("Error", "Server error occurred.", "error");
+            }
+          });
+        }
+      });
+    });
+
+    // PNG Download
+    $(document).on("click", "#downloadPngBtn", function () {
+      const $btn = $(this);
+      const originalHtml = $btn.html();
+      $btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin"></i> Generating...');
+
+      const receiptElement = document.getElementById('receiptCaptureArea');
+
+      html2canvas(receiptElement, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff'
+      }).then(canvas => {
+        const link = document.createElement('a');
+        link.download = 'StaySmart-Receipt-{{ $booking->reference }}.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        $btn.prop('disabled', false).html(originalHtml);
+      }).catch(err => {
+        console.error('PNG Generation Error:', err);
+        $btn.prop('disabled', false).html(originalHtml);
+      });
+    });
   </script>
 
 </body>

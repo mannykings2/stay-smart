@@ -26,7 +26,7 @@ return new class extends Migration
     public function down()
     {
         Schema::table('chef_bookings', function (Blueprint $table) {
-            //
+            $table->dropConstrainedForeignId('chef_service_type_id');
         });
     }
 };

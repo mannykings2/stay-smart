@@ -9,6 +9,9 @@ use App\Models\Booking;
 use App\Models\Payment;
 use App\Models\User;
 use App\Models\BlogPost;
+use App\Models\ChefBooking;
+use App\Models\DriverBooking;
+use App\Models\RevenueSplit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
@@ -34,7 +37,7 @@ class PagesController extends Controller
     public function welcome()
     {
         $properties = Property::whereIn('status', ['Available', 'Booked', 'Under Maintenance'])
-            ->with(['images'])
+            ->with(['images', 'amenities'])
             ->withCount('bookings')
             ->orderBy('bookings_count', 'desc')
             ->take(20)
@@ -106,7 +109,7 @@ class PagesController extends Controller
         }
 
         $properties = $query->whereIn('status', ['Available', 'Booked', 'Under Maintenance'])
-            ->with(['images'])
+            ->with(['images', 'amenities'])
             ->withCount('bookings')
             ->orderBy('bookings_count', 'desc')
             ->paginate(12);
@@ -179,26 +182,27 @@ class PagesController extends Controller
                 }
             })
             ->where('max_guests', '>=', $guests)
-            ->with(['images'])
+            ->with(['images', 'amenities', 'bookings' => function($q) use ($check_in, $check_out) {
+                $q->where('status', 'Confirmed')
+                  ->where('check_in_date', '<', $check_out)
+                  ->where('check_out_date', '>', $check_in);
+            }])
             ->withCount('bookings')
             ->orderBy('bookings_count', 'desc')
             ->paginate(6)
             ->appends($request->all()); // keep query params for pagination links
 
         // Step 3: Check Availability for each property
-        // We iterate through the paginated results and set a temporary flag 'is_unavailable'
-        $properties->getCollection()->transform(function ($property) use ($check_in, $check_out) {
-            $isBooked = $property->bookings()
-                ->where(function ($q) use ($check_in, $check_out) {
-                    $q->where('check_in_date', '<', $check_out)
-                        ->where('check_out_date', '>', $check_in)
-                        ->where('status', '!=', 'Cancelled');
-                })
-                ->exists();
+        // Optimized: We check availability using the eager-loaded bookings
+        foreach ($properties as $property) {
+            $isBooked = $property->bookings->contains(function ($booking) use ($check_in, $check_out) {
+                return $booking->status === 'Confirmed' &&
+                       Carbon::parse($booking->check_in_date)->lt(Carbon::parse($check_out)) &&
+                       Carbon::parse($booking->check_out_date)->gt(Carbon::parse($check_in));
+            });
 
             $property->is_unavailable = $isBooked;
-            return $property;
-        });
+        }
 
         return view('search', compact('properties')); // so old input can be retained in form fields
     }
@@ -208,7 +212,7 @@ class PagesController extends Controller
     {
         try {
             $propertyId = Crypt::decrypt($request->propertyId);
-            $property = Property::with('images')->find($propertyId);
+            $property = Property::with(['images', 'amenities'])->find($propertyId);
 
             if (!$property) {
                 return redirect()->route('welcome')->with('error', 'Property not found.');
@@ -222,7 +226,7 @@ class PagesController extends Controller
 
     public function booking(Request $request)
     {
-        $booking = Booking::where("reference", $request->reference)->first();
+        $booking = Booking::with(['property.amenities', 'user', 'payment'])->where('reference', $request->reference)->first();
 
         if (!$booking) {
             return redirect()->route('welcome')->with('error', 'Booking not found.');
@@ -240,7 +244,7 @@ class PagesController extends Controller
         $validationRules = [
             'property_id' => 'required|integer',
             'number_of_guests' => 'required|integer',
-            'check_in_date' => 'required|date',
+            'check_in_date' => 'required|date|after_or_equal:today',
             'check_out_date' => 'required|date|after:check_in_date',
             'check_in_time' => 'required|date_format:H:i',
             'check_out_time' => 'required|date_format:H:i',
@@ -318,16 +322,16 @@ class PagesController extends Controller
         $check_in_date = $request->check_in_date;
         $check_out_date = $request->check_out_date;
 
-        // Check if property is already booked
+        // Check if property is already booked (Confirmed status only)
         $isBooked = Booking::where('property_id', $property->id)
             ->where('status', 'Confirmed')
-            ->whereDate('check_in_date', '<=', $check_out_date)
-            ->whereDate('check_out_date', '>=', $check_in_date)
+            ->whereDate('check_in_date', '<', $check_out_date) // Exclusive check
+            ->whereDate('check_out_date', '>', $check_in_date)
             ->exists();
 
         if ($isBooked) {
-            \Illuminate\Support\Facades\Log::info('Booking failed: Property already booked', ['property_id' => $property->id, 'check_in' => $check_in_date, 'check_out' => $check_out_date, 'input' => $request->all()]);
-            return back()->with('error', 'Sorry, this property is already booked for the selected dates. Please choose different dates or browse our other available properties.');
+            \Illuminate\Support\Facades\Log::info('Booking failed: Property already booked or on hold', ['property_id' => $property->id, 'check_in' => $check_in_date, 'check_out' => $check_out_date, 'input' => $request->all()]);
+            return back()->with('error', 'Sorry, this property is already booked or reserved for the selected dates. Please choose different dates, try again in a few minutes or browse our other available properties.');
         }
 
         $available_status = ['Available', 'Booked'];
@@ -365,7 +369,7 @@ class PagesController extends Controller
 
     public function view($reference)
     {
-        $booking = Booking::where('reference', $reference)->first();
+        $booking = Booking::where('reference', $reference)->with(['property.amenities', 'user', 'payment'])->first();
 
         if (!$booking) {
             return back()->with('error', 'Invalid booking reference');
@@ -396,24 +400,50 @@ class PagesController extends Controller
     {
         $request->validate([
             'booking_id' => 'required|integer',
+            'booking_type' => 'nullable|string|in:property,chef,driver',
             'reference' => 'nullable|string'
         ]);
 
-        $booking = Booking::find($request->booking_id);
+        $type = $request->booking_type ?? 'property';
+        $booking = null;
+
+        if ($type === 'chef') {
+            $booking = ChefBooking::find($request->booking_id);
+        } elseif ($type === 'driver') {
+            $booking = DriverBooking::find($request->booking_id);
+        } else {
+            $booking = Booking::with('property')->find($request->booking_id);
+        }
+
         if (!$booking) {
             return back()->with('error', 'Booking not found.');
+        }
+
+        // Pre-Payment Availability Check (Properties only)
+        if ($type === 'property') {
+            $isBooked = Booking::where('property_id', $booking->property_id)
+                ->where('status', 'Confirmed')
+                ->whereDate('check_in_date', '<', $booking->check_out_date) // Exclusive check
+                ->whereDate('check_out_date', '>', $booking->check_in_date)
+                ->exists();
+
+            if ($isBooked) {
+                return back()->with('error', 'Sorry, this apartment was just confirmed by another guest. Please select different dates.');
+            }
         }
 
         if (in_array($booking->status, ['Cancelled', 'Confirmed'])) {
             return back()->with('error', 'This booking cannot be paid (already confirmed or cancelled).');
         }
 
-        $email = $booking->user->email ?? null;
+        $email = $booking->user->email ?? auth()->user()->email;
         if (!$email) {
             return back()->with('error', 'Booking buyer does not have an email address.');
         }
 
-        $amountInKobo = (int) round($booking->total_price * 100);
+        $price = ($type === 'property') ? $booking->total_price : $booking->price;
+        $amountInKobo = (int) round($price * 100);
+
         if ($amountInKobo <= 0) {
             return back()->with('error', 'Invalid booking amount.');
         }
@@ -421,26 +451,15 @@ class PagesController extends Controller
         $baseReference = $request->reference ?: $booking->reference;
         $reference = $baseReference . '-' . time();
 
-        $payment = Payment::where('booking_id', $booking->id)->first();
-        if ($payment && $payment->status === 'Completed') {
-            return redirect()->route('booking', ['reference' => $booking->reference])->with('success', 'Booking already paid.');
-        }
-
-        if (!$payment) {
-            $payment = Payment::create([
-                'booking_id' => $booking->id,
-                'user_id' => $booking->user_id,
-                'payment_method' => 'Paystack',
-                'amount' => $booking->total_price,
-                'trx_ref' => $reference,
-                'status' => 'Pending',
-            ]);
-        } else {
-            $payment->update([
-                'trx_ref' => $reference,
-                'status' => 'Pending',
-            ]);
-        }
+        // For non-property bookings, we leave booking_id NULL in payments table to avoid constraint errors
+        $payment = Payment::create([
+            'booking_id' => ($type === 'property') ? $booking->id : null,
+            'user_id' => $booking->user_id,
+            'payment_method' => 'Paystack',
+            'amount' => $price,
+            'trx_ref' => $reference,
+            'status' => 'Pending',
+        ]);
 
         $response = $this->paystackService->initializeTransaction([
             'email' => $email,
@@ -448,7 +467,9 @@ class PagesController extends Controller
             'reference' => $reference,
             'callback_url' => route('verify.payment'),
             'metadata' => [
-                'redirect_to' => $request->redirect_to
+                'redirect_to' => $request->redirect_to,
+                'booking_id' => $booking->id,
+                'booking_type' => $type
             ]
         ]);
 
@@ -459,6 +480,107 @@ class PagesController extends Controller
         }
 
         return back()->with('error', $response['message'] ?? 'Failed to initialize payment.');
+    }
+
+    public function initializePayment(Request $request)
+    {
+        $request->validate([
+            'booking_id' => 'required|integer',
+            'booking_type' => 'nullable|string|in:property,chef,driver'
+        ]);
+
+        $type = $request->booking_type ?? 'property';
+        $booking = null;
+
+        if ($type === 'chef') {
+            $booking = ChefBooking::find($request->booking_id);
+        } elseif ($type === 'driver') {
+            $booking = DriverBooking::find($request->booking_id);
+        } else {
+            $booking = Booking::with('property')->find($request->booking_id);
+        }
+
+        if (!$booking) {
+            return response()->json(['status' => 'failed', 'message' => 'Booking not found.'], 404);
+        }
+
+        $price = ($type === 'property') ? $booking->total_price : $booking->price;
+
+        // Pre-Payment Availability Check (Only for properties)
+        if ($type === 'property') {
+            $isBooked = Booking::where('property_id', $booking->property_id)
+                ->where('status', 'Confirmed')
+                ->whereDate('check_in_date', '<', $booking->check_out_date)
+                ->whereDate('check_out_date', '>', $booking->check_in_date)
+                ->exists();
+
+            if ($isBooked) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Sorry, this apartment was just confirmed by another guest. Please select different dates.'
+                ], 409);
+            }
+        }
+
+        $reference = $booking->reference . '-' . time();
+
+        // REUSE OR CREATE PAYMENT
+        $paymentData = [
+            'user_id' => $booking->user_id,
+            'payment_method' => 'Paystack',
+            'amount' => $price,
+            'trx_ref' => $reference,
+            'status' => 'Pending',
+        ];
+
+        if ($type === 'property') {
+            $paymentData['booking_id'] = $booking->id;
+            $payment = Payment::updateOrCreate(
+                ['booking_id' => $booking->id, 'status' => 'Pending'],
+                $paymentData
+            );
+        } elseif ($type === 'chef') {
+            $paymentData['chef_booking_id'] = $booking->id;
+            $payment = Payment::updateOrCreate(
+                ['chef_booking_id' => $booking->id, 'status' => 'Pending'],
+                $paymentData
+            );
+        } elseif ($type === 'driver') {
+            $paymentData['ride_booking_id'] = $booking->id;
+            $payment = Payment::updateOrCreate(
+                ['ride_booking_id' => $booking->id, 'status' => 'Pending'],
+                $paymentData
+            );
+        }
+
+        $email = $booking->user->email ?? auth()->user()->email;
+        $redirectTo = $request->redirect_to ?? 'frontend';
+
+        return response()->json([
+            'status' => 'success',
+            'reference' => $payment->trx_ref,
+            'email' => $email,
+            'amount' => $price,
+            'metadata' => [
+                'redirect_to' => $redirectTo,
+                'booking_id' => $booking->id,
+                'booking_type' => $type
+            ]
+        ]);
+    }
+
+    public function recordFailedPayment(Request $request)
+    {
+        $request->validate([
+            'reference' => 'required|string',
+        ]);
+
+        $payment = Payment::where('trx_ref', $request->reference)->first();
+        if ($payment && $payment->status === 'Pending') {
+            $payment->update(['status' => 'Failed']);
+        }
+
+        return response()->json(['status' => 'success']);
     }
 
     public function verifyPayment(Request $request)
@@ -473,35 +595,149 @@ class PagesController extends Controller
 
         $response = $this->paystackService->verifyTransaction($reference);
 
-        if (isset($response['status']) && $response['status'] === true && isset($response['data']['status']) && $response['data']['status'] === 'success') {
+        $isSuccessful = isset($response['status']) && $response['status'] === true &&
+            isset($response['data']['status']) && $response['data']['status'] === 'success';
 
-            $payment = Payment::where('trx_ref', $reference)->first();
+        $payment = Payment::where('trx_ref', $reference)->first();
 
-            if (!$payment && $bookingId) {
-                $booking = Booking::find($bookingId);
-                if ($booking) {
-                    $payment = Payment::create([
-                        'booking_id' => $booking->id,
-                        'user_id' => $booking->user_id,
-                        'payment_method' => 'Paystack',
-                        'amount' => ($response['data']['amount'] ?? 0) / 100 ?: $booking->total_price,
-                        'trx_ref' => $reference,
-                        'status' => 'Completed',
-                    ]);
-                }
-            }
-
-            if ($payment && $payment->status !== 'Completed') {
-                $payment->update([
-                    'status' => 'Completed',
+        // If no payment record is found (shouldn't happen with new flow, but for safety)
+        if (!$payment && $bookingId && $isSuccessful) {
+            $booking = Booking::find($bookingId);
+            if ($booking) {
+                $payment = Payment::create([
+                    'booking_id' => $booking->id,
+                    'user_id' => $booking->user_id,
+                    'payment_method' => 'Paystack',
+                    'amount' => $booking->total_price,
                     'trx_ref' => $reference,
+                    'status' => 'Pending',
                 ]);
             }
+        }
 
-            if ($payment && $payment->booking_id) {
-                $booking = Booking::find($payment->booking_id);
-                if ($booking) {
-                    $booking->update(['status' => 'Confirmed']);
+        if ($isSuccessful) {
+            if ($payment) {
+                return DB::transaction(function () use ($payment, $response, $request, $isSuccessful) {
+                    $metadata = $response['data']['metadata'] ?? [];
+                    $bookingId = $metadata['booking_id'] ?? null;
+                    $bookingType = $metadata['booking_type'] ?? 'property';
+
+                    if ($bookingType === 'chef') {
+                        $booking = ChefBooking::lockForUpdate()->find($bookingId);
+                    } elseif ($bookingType === 'driver') {
+                        $booking = DriverBooking::lockForUpdate()->find($bookingId);
+                    } else {
+                        $booking = Booking::lockForUpdate()->find($payment->booking_id);
+                    }
+
+                    if (!$booking) {
+                        return response()->json(['status' => 'error', 'message' => 'Booking not found during verification.'], 404);
+                    }
+
+                    // FINAL ATOMIC AVAILABILITY CHECK (Properties only)
+                    if ($bookingType === 'property') {
+                        $conflict = Booking::where('property_id', $booking->property_id)
+                            ->where('status', 'Confirmed')
+                            ->where('id', '!=', $booking->id)
+                            ->whereDate('check_in_date', '<', $booking->check_out_date)
+                            ->whereDate('check_out_date', '>', $booking->check_in_date)
+                            ->exists();
+
+                        if ($conflict) {
+                            $payment->update(['status' => 'Failed', 'notes' => 'Conflict: Dates were booked by another guest during payment. Refund required.']);
+                            Log::critical("PAYMENT CONFLICT: Payment successful for Booking #{$booking->id} but dates are now occupied. REFUND REQUIRED.");
+
+                            if ($request->expectsJson()) {
+                                return response()->json([
+                                    'status' => 'error',
+                                    'message' => 'Sorry, another guest completed their payment for these dates just seconds before you. Please contact support for a priority refund or date change.'
+                                ], 409);
+                            }
+                            return redirect()->route('booking', ['reference' => $booking->reference])
+                                ->with('error', 'Another guest just secured these dates. Please contact support for your refund.');
+                        }
+                    }
+
+                    if ($isSuccessful) {
+                        $payment->update(['status' => 'Completed']);
+                        $booking->update(['status' => 'Confirmed']);
+
+                        // REVENUE MANAGEMENT: Create Revenue Split
+                        try {
+                            $globalAdmin = User::role('Super Admin')->with('revenueConfig')->first();
+                            $admin = null;
+                            $commissionRate = 10.00;
+                            $commissionType = 'Percentage';
+
+                            if ($bookingType === 'chef') {
+                                $serviceType = 'Chef';
+                                $chef = $booking->chef;
+                                $commissionRate = $chef->commission_rate ?? ($globalAdmin->revenueConfig?->staff_commission_rate ?? 10.00);
+                                $commissionType = $chef->commission_type ?? 'Percentage';
+                                $admin = $globalAdmin; // Revenue centralized to platform
+                            } elseif ($bookingType === 'driver') {
+                                $serviceType = 'Driver';
+                                $driver = $booking->driver;
+                                $commissionRate = $driver->commission_rate ?? ($globalAdmin->revenueConfig?->staff_commission_rate ?? 10.00);
+                                $commissionType = $driver->commission_type ?? 'Percentage';
+                                $admin = $globalAdmin; // Revenue centralized to platform
+                            } else {
+                                $serviceType = 'Property';
+                                $property = $booking->property;
+                                if ($property && !is_null($property->commission_rate)) {
+                                    $commissionRate = $property->commission_rate;
+                                } elseif ($globalAdmin) {
+                                    $commissionRate = $globalAdmin->revenueConfig?->commission_rate ?? 10.00;
+                                }
+                                $commissionType = $property->commission_type ?? 'Percentage';
+                                if ($property && $property->user_id) {
+                                    $admin = User::with('revenueConfig')->find($property->user_id);
+                                }
+                            }
+
+                            $totalAmount = $payment->amount;
+                            if ($commissionType === 'Fixed') {
+                                $platformFee = min($commissionRate, $totalAmount); // Cap at payment amount
+                            } else {
+                                $platformFee = ($totalAmount * $commissionRate) / 100;
+                            }
+
+                            // PURE CALCULATION: admin_net is exactly Total - Fee
+                            $adminNet = $totalAmount - $platformFee;
+
+                            // Determine admin ID — skip if no admin found
+                            $adminId = $admin?->id ?? $globalAdmin?->id;
+                            if (!$adminId) {
+                                Log::warning('No admin found for revenue split', ['payment_id' => $payment->id]);
+                            } elseif (!RevenueSplit::where('payment_id', $payment->id)->exists()) {
+                                // Guard against duplicate splits from callback retries
+                                $status = 'Pending';
+                                    
+                                // Check if frequency is On Demand - if so, skip the 'Paid' state and go straight to 'Available'
+                                $globalFrequency = User::role('Super Admin')->with('revenueConfig')->first()?->revenueConfig?->payout_frequency ?? 'On Demand';
+                                $frequency = $admin?->revenueConfig?->payout_frequency ?? $globalFrequency;
+                                    
+                                // Note: At checkout, funds aren't technically 'Paid' by the system yet (earned), but if On Demand is set,
+                                // we can mark as Paid immediately. Then once they check out, the system will move it to Available.
+                                // However, the user wants 'On Demand' to be fast. 
+                                // In our current flow: Confirmed -> Checkout (moves to Paid).
+                                // Let's keep initial creates as 'Pending' and only trigger maturation in the checkout method below.
+
+                                RevenueSplit::create([
+                                    'payment_id' => $payment->id,
+                                    'admin_id' => $adminId,
+                                    'service_type' => $serviceType,
+                                    'total_amount' => $totalAmount,
+                                    'platform_fee_amount' => $platformFee,
+                                    'admin_net_amount' => $adminNet,
+                                    'commission_rate_applied' => $commissionRate,
+                                    'status' => $status,
+                                ]);
+                            }
+                        } catch (\Exception $e) {
+                            Log::error('Revenue Splitting Failed', ['error' => $e->getMessage()]);
+                        }
+                    }
 
                     try {
                         if ($booking->user && !empty($booking->user->email)) {
@@ -510,34 +746,39 @@ class PagesController extends Controller
                     } catch (\Exception $e) {
                         Log::error('Failed to send booking receipt email', ['error' => $e->getMessage()]);
                     }
-                }
+
+                    if ($request->expectsJson()) {
+                        return response()->json([
+                            'status' => 'success',
+                            'message' => 'Payment successful! Your booking is now confirmed.',
+                            'booking_reference' => $booking->reference,
+                        ]);
+                    }
+
+                    $metadata = $response['data']['metadata'] ?? [];
+                    $redirectTo = $metadata['redirect_to'] ?? 'frontend';
+
+                    $route = ($redirectTo === 'backend') ? 'booking.view' : 'booking';
+                    return redirect()->route($route, ['reference' => $booking->reference])
+                        ->with('success', 'Payment successful! Your booking is now confirmed.');
+                });
             }
 
-            if ($booking) {
-                if ($request->expectsJson()) {
-                    return response()->json([
-                        'status' => 'success',
-                        'message' => 'Payment successful! Your booking is now confirmed.',
-                        'booking_reference' => $booking->reference,
-                        'booking_id' => $booking->id,
-                    ]);
-                }
-
-                $metadata = $response['data']['metadata'] ?? [];
-                $redirectTo = $metadata['redirect_to'] ?? null;
-
-                if ($redirectTo === 'backend') {
-                    return redirect()->route('booking.view', ['reference' => $booking->reference])
-                        ->with('success', 'Payment successful! Booking confirmed.');
-                }
-
-                // Redirect to frontend booking details page instead of backend view
-                return redirect()->route('booking', ['reference' => $booking->reference])
-                    ->with('success', 'Payment successful! Your booking is now confirmed.');
+        } else {
+            // Mark as failed if it was pending
+            if ($payment && $payment->status === 'Pending') {
+                $payment->update(['status' => 'Failed']);
             }
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'status' => 'failed',
+                    'message' => 'Payment verification failed. Please try again.',
+                ], 400);
+            }
+
+            return redirect()->route('welcome')->with('error', 'Payment verification failed.');
         }
-
-        return redirect()->route('welcome')->with('error', 'Payment verification failed.');
     }
 
     public function checkIn(Request $request)
@@ -708,7 +949,7 @@ class PagesController extends Controller
         $booking_id = $request->input('booking_id');
         $provided_last_name = $request->input('last_name');
 
-        $booking = Booking::with(['user', 'property'])->find($booking_id);
+        $booking = Booking::with(['user', 'property', 'payment'])->find($booking_id);
         if (!$booking) {
             return response()->json(['status' => 'error', 'message' => 'Booking not found'], 404);
         }
@@ -773,6 +1014,26 @@ class PagesController extends Controller
             $booking->status = 'Completed';
             $booking->save();
 
+            // Update RevenueSplit status to 'Paid'
+            if ($booking->payment) {
+                RevenueSplit::whereHas('payment', function ($q) use ($booking) {
+                $q->where('id', $booking->payment->id);
+            })->update(['status' => 'Paid']);
+
+            // AFTER marking as Paid, run promotion logic to see if it should move to 'Available' immediately
+            if ($booking->property && $booking->property->user) {
+                $rmController = app(\App\Http\Controllers\RevenueManagementController::class);
+                $admin = $booking->property->user;
+                $admin->loadMissing('revenueConfig');
+                $rmController->runPromoteMaturedSplits($admin);
+            } else {
+                Log::warning('Skipped runPromoteMaturedSplits: property owner missing', [
+                    'booking_id' => $booking_id,
+                    'property_id' => $booking->property_id,
+                ]);
+            }
+            }
+
             // Update property status to Available
             if ($booking->property) {
                 $booking->property->update(['status' => 'Available']);
@@ -782,7 +1043,7 @@ class PagesController extends Controller
             Log::info("Successful Check-Out: Booking #{$booking_id} | Method: {$authMethod} | IP: {$request->ip()} | UA: {$request->userAgent()}");
 
             return response()->json(['status' => 'success', 'message' => 'Checked out successfully', 'booking_status' => $booking->status]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error('Exception in checkOutBooking', [
                 'message' => $e->getMessage(),
                 'booking_id' => $booking_id
@@ -794,11 +1055,21 @@ class PagesController extends Controller
     public function cancelBooking(Request $request)
     {
         $request->validate([
-            'booking_id' => 'required|integer'
+            'booking_id' => 'required|integer',
+            'booking_type' => 'nullable|string'
         ]);
 
         $booking_id = $request->input('booking_id');
-        $booking = Booking::find($booking_id);
+        $type = $request->input('booking_type', 'property');
+
+        if ($type === 'chef') {
+            $booking = ChefBooking::find($booking_id);
+        } elseif ($type === 'driver') {
+            $booking = DriverBooking::find($booking_id);
+        } else {
+            $booking = Booking::with('property')->find($booking_id);
+        }
+
         if (!$booking) {
             return response()->json(['status' => 'error', 'message' => 'Booking not found'], 404);
         }
@@ -806,7 +1077,12 @@ class PagesController extends Controller
         // Authorization Check
         $user = auth()->user();
         $isGuest = $user->id === $booking->user_id;
-        $isOwner = $user->id === $booking->property->user_id;
+
+        $isOwner = false;
+        if ($type === 'property' && $booking->property) {
+            $isOwner = $user->id === $booking->property->user_id;
+        }
+
         $isSuperAdmin = $user->hasRole('Super Admin');
 
         if (!$isGuest && !$isOwner && !$isSuperAdmin) {
@@ -820,6 +1096,25 @@ class PagesController extends Controller
 
             $booking->status = 'Cancelled';
             $booking->save();
+
+            // Void associated revenue split (only if not already Withdrawn)
+            $paymentQuery = null;
+            if ($type === 'property') {
+                $paymentQuery = Payment::where('booking_id', $booking->id)->where('status', 'Completed');
+            } elseif ($type === 'chef') {
+                $paymentQuery = Payment::where('chef_booking_id', $booking->id)->where('status', 'Completed');
+            } elseif ($type === 'driver') {
+                $paymentQuery = Payment::where('ride_booking_id', $booking->id)->where('status', 'Completed');
+            }
+
+            if ($paymentQuery) {
+                $relatedPayment = $paymentQuery->first();
+                if ($relatedPayment) {
+                    RevenueSplit::where('payment_id', $relatedPayment->id)
+                        ->whereIn('status', ['Pending', 'Paid', 'Available'])
+                        ->update(['status' => 'Voided']);
+                }
+            }
 
             return response()->json(['status' => 'success', 'message' => 'Booking cancelled successfully', 'booking_status' => $booking->status]);
         } catch (\Exception $e) {

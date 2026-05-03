@@ -17,7 +17,7 @@ class ChefController extends Controller
      */
     public function index()
     {
-        $chefs = Chef::all();
+        $chefs = Chef::with('chefServices')->get();
         $servicesList = ChefService::all();
         return view('chefs.index', compact('chefs', 'servicesList'));
     }
@@ -87,6 +87,43 @@ class ChefController extends Controller
                 return response()->json(['error' => true, 'message' => 'Service not found', 'booking' => '']);
             }
 
+            $chef = Chef::findOrFail($request->chef_id);
+
+            // 1. Capacity Validation
+            if ($request->number_of_guests > $chef->max_guests) {
+                return response()->json([
+                    'error' => true,
+                    'message' => "This chef can only accommodate up to {$chef->max_guests} guests."
+                ]);
+            }
+
+            // 2. Availability / Overlap Check (3 hour buffer)
+            $requestedTime = \Carbon\Carbon::parse($request->service_date . ' ' . $request->service_time);
+            $startTime = $requestedTime->copy()->subHours(2);
+            $endTime = $requestedTime->copy()->addHours(2);
+
+            $overlap = ChefBooking::where('chef_id', $request->chef_id)
+                ->where('status', '!=', 'Cancelled')
+                ->where('service_date', $request->service_date)
+                ->whereBetween('service_time', [
+                    $startTime->format('H:i:s'),
+                    $endTime->format('H:i:s')
+                ])
+                ->exists();
+
+            if ($overlap) {
+                return response()->json([
+                    'error' => true,
+                    'message' => 'This chef is already booked around this time. Please choose a different time or chef.'
+                ]);
+            }
+
+            // 3. Pricing Calculation
+            $guests = (int) ($request->number_of_guests ?: 1);
+            $baseTotal = $service->base_price ?: ($service->price ?: 0);
+            $extraTotal = $guests * ($service->per_unit_price ?: 0);
+            $grandTotal = $baseTotal + $extraTotal;
+
             // Generate booking ID
             $reference = 'CHEF-' . Str::upper(Str::random(4)) . '-' . rand(10000, 99999);
 
@@ -94,11 +131,16 @@ class ChefController extends Controller
                 'user_id' => Auth::id(),
                 'chef_id' => $request->chef_id,
                 'chef_service_type_id' => $request->chef_service,
-                'price' => $service->price,
+                'price' => $grandTotal,
                 'reference' => $reference,
-                'booking_id' => $request->booking_id,
+                'booking_id' => $request->booking_id ?: null,
                 'service_date' => $request->service_date,
                 'service_time' => $request->service_time,
+                'number_of_guests' => $guests,
+                'dietary_requirements' => $request->dietary_requirements,
+                'menu_notes' => $request->menu_notes,
+                'booking_base_price' => $service->base_price,
+                'booking_per_unit_price' => $service->per_unit_price,
                 'status' => 'Scheduled',
             ]);
 
@@ -106,7 +148,7 @@ class ChefController extends Controller
             return response()->json(['error' => true, 'message' => $th->getMessage(), 'booking' => '']);
         }
 
-        return response()->json(['success' => true, 'message' => 'Booking successful!', 'booking' => $booking]);
+        return response()->json(['success' => true, 'message' => 'Service scheduled successfully!', 'booking' => $booking]);
     }
 
 

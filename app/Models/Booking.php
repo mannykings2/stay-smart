@@ -18,7 +18,8 @@ class Booking extends Model
         'check_out_date',
         'check_in_time',
         'check_out_time',
-        'total_price'
+        'total_price',
+        'number_of_guests',
     ];
 
     public function digitalCheckIns()
@@ -38,7 +39,17 @@ class Booking extends Model
 
     public function payment()
     {
-        return $this->hasOne(Payment::class);
+        return $this->hasOne(Payment::class)->latestOfMany();
+    }
+
+    public function chefBookings()
+    {
+        return $this->hasMany(ChefBooking::class);
+    }
+
+    public function rideBookings()
+    {
+        return $this->hasMany(DriverBooking::class);
     }
 
     public function isCheckedIn()

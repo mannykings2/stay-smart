@@ -97,44 +97,82 @@
 @push('js')
     <script>
         function markAsAvailable(propertyId) {
-            if (confirm("Are you sure you want to mark this apartment as available?")) {
-                fetch(`/admin/properties/${propertyId}/mark-available`, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({})
-                }).then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            location.reload();
-                        } else {
-                            alert("Something went wrong.");
-                        }
-                    });
-            }
+            Swal.fire({
+                title: 'Confirm Availability',
+                text: 'Are you sure you want to mark this apartment as available?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, mark available',
+                cancelButtonText: 'Cancel',
+                buttonsStyling: false,
+                customClass: {
+                    confirmButton: 'btn btn-primary px-4 me-2',
+                    cancelButton: 'btn btn-danger px-4',
+                    popup: 'rounded-4 border-0 shadow'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    fetch(`/admin/properties/${propertyId}/mark-available`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({})
+                    }).then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                location.reload();
+                            } else {
+                                Swal.fire('Error', 'Something went wrong.', 'error');
+                            }
+                        });
+                }
+            });
         }
 
 
         function deleteProperty(propertyId) {
-            if (confirm("Are you sure you want to delete this apartment?")) {
-                fetch(`/properties/${propertyId}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                        'Content-Type': 'application/json'
-                    }
-                }).then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            showSuccessMessage("Apartment deleted successfully!");
-                            setTimeout(() => location.reload(), 1500);
-                        } else {
-                            alert("Failed to delete apartment.");
+            Swal.fire({
+                title: 'Delete Apartment?',
+                text: 'Are you sure you want to delete this apartment? This action cannot be undone.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, delete it!',
+                cancelButtonText: 'Cancel',
+                buttonsStyling: false,
+                customClass: {
+                    confirmButton: 'btn btn-primary px-4 me-2',
+                    cancelButton: 'btn btn-danger px-4',
+                    popup: 'rounded-4 border-0 shadow'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    fetch(`/properties/${propertyId}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Content-Type': 'application/json'
                         }
-                    });
-            }
+                    }).then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Deleted!',
+                                    text: 'Apartment deleted successfully!',
+                                    timer: 1500,
+                                    showConfirmButton: false,
+                                    customClass: {
+                                        popup: 'rounded-4 border-0 shadow'
+                                    }
+                                }).then(() => location.reload());
+                            } else {
+                                Swal.fire('Error', 'Failed to delete apartment.', 'error');
+                            }
+                        });
+                }
+            });
         }
 
         function openAssignModal(propertyId) {
@@ -159,13 +197,24 @@
                 .then(data => {
                     $('#assignAmenityModal').modal('hide');
                     if (data.success) {
-                        showSuccessMessage("Amenity assigned successfully!");
-                        setTimeout(() => location.reload(), 1500);
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Assigned!',
+                            text: 'Amenity assigned successfully!',
+                            timer: 1500,
+                            showConfirmButton: false,
+                            customClass: {
+                                popup: 'rounded-4 border-0 shadow'
+                            }
+                        }).then(() => location.reload());
                     } else {
-                        alert('Failed to assign amenity.');
+                        Swal.fire('Error', 'Failed to assign amenity.', 'error');
                     }
                 })
-                .catch(error => console.error('Error:', error));
+                .catch(error => {
+                    console.error('Error:', error);
+                    Swal.fire('Error', 'An unexpected error occurred.', 'error');
+                });
         });
     </script>
 @endpush

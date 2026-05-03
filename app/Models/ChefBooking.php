@@ -18,7 +18,12 @@ class ChefBooking extends Model
         'booking_id',
         'service_date',
         'service_time',
-        'status'
+        'status',
+        'number_of_guests',
+        'dietary_requirements',
+        'menu_notes',
+        'booking_base_price',
+        'booking_per_unit_price'
     ];
 
     public function chef()
@@ -31,8 +36,18 @@ class ChefBooking extends Model
         return $this->belongsTo(ChefServiceType::class);
     }
 
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
     public function booking()
     {
         return $this->belongsTo(Booking::class);
+    }
+
+    public function payment()
+    {
+        return $this->hasOne(Payment::class, 'chef_booking_id')->latestOfMany();
     }
 }

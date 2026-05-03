@@ -39,7 +39,7 @@
                                     </div>
                                     <input type="date" name="check_in_date"
                                         class="form-control radius-30 ps-5 @error('check_in_date') is-invalid @enderror"
-                                        id="inputCheckInDate" value="{{old('check_in_date')}}" required>
+                                        id="inputCheckInDate" value="{{old('check_in_date')}}" min="{{ date('Y-m-d') }}" required>
                                 </div>
                                 @error('check_in_date')
                                     <small class="text-danger" role="alert">
@@ -55,7 +55,7 @@
                                     </div>
                                     <input type="date" name="check_out_date"
                                         class="form-control radius-30 ps-5 @error('check_out_date') is-invalid @enderror"
-                                        id="inputCheckOutDate" value="{{old('check_out_date')}}" required>
+                                        id="inputCheckOutDate" value="{{old('check_out_date')}}" min="{{ date('Y-m-d') }}" required>
                                 </div>
                             </div>
                             <div class="col-md-4">

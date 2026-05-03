@@ -37,6 +37,6 @@ class ContactController extends Controller
         }
 
         return redirect()->to(url()->previous() . '#contact-form')
-            ->with('success', 'Your message has been sent successfully! We will get back to you shortly.');
+            ->with('contact_success', 'Your message has been sent successfully! We will get back to you shortly.');
     }
 }

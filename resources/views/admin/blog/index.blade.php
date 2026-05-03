@@ -60,7 +60,7 @@
                                                         <i class="bi bi-pencil-fill"></i> Edit
                                                     </a>
                                                     <form action="{{ route('admin.blog.destroy', $post->id) }}" method="POST"
-                                                        onsubmit="return confirm('Are you sure you want to delete this post?');">
+                                                        class="confirm-submit" data-message="Are you sure you want to delete this blog post?">
                                                         @csrf
                                                         @method('DELETE')
                                                         <button type="submit" class="btn btn-sm btn-danger">
