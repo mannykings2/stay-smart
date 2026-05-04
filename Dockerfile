@@ -2,6 +2,8 @@ FROM richarvey/nginx-php-fpm:3.1.6
 
 COPY docker/aiven-ca.pem /etc/ssl/certs/aiven-ca.pem
 
+COPY conf/nginx.conf /etc/nginx/sites-enabled/default.conf
+
 COPY render-start.sh /render-start.sh
 RUN chmod +x /render-start.sh
 
